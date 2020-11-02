@@ -329,6 +329,7 @@ mKernelQuirksSchema[] = {
   OC_SCHEMA_BOOLEAN_IN ("DisableRtcChecksum",      OC_GLOBAL_CONFIG, Kernel.Quirks.DisableRtcChecksum),
   OC_SCHEMA_BOOLEAN_IN ("ExtendBTFeatureFlags",    OC_GLOBAL_CONFIG, Kernel.Quirks.ExtendBTFeatureFlags),
   OC_SCHEMA_BOOLEAN_IN ("ExternalDiskIcons",       OC_GLOBAL_CONFIG, Kernel.Quirks.ExternalDiskIcons),
+  OC_SCHEMA_BOOLEAN_IN ("ForceSecureBootScheme",   OC_GLOBAL_CONFIG, Kernel.Quirks.ForceSecureBootScheme),
   OC_SCHEMA_BOOLEAN_IN ("IncreasePciBarSize",      OC_GLOBAL_CONFIG, Kernel.Quirks.IncreasePciBarSize),
   OC_SCHEMA_BOOLEAN_IN ("LapicKernelPanic",        OC_GLOBAL_CONFIG, Kernel.Quirks.LapicKernelPanic),
   OC_SCHEMA_BOOLEAN_IN ("LegacyCommpage",          OC_GLOBAL_CONFIG, Kernel.Quirks.LegacyCommpage),
@@ -551,7 +552,8 @@ mPlatformConfigurationNvramSchema[] = {
   OC_SCHEMA_DATAF_IN  ("FirmwareFeatures",     OC_GLOBAL_CONFIG, PlatformInfo.Nvram.FirmwareFeatures),
   OC_SCHEMA_DATAF_IN  ("FirmwareFeaturesMask", OC_GLOBAL_CONFIG, PlatformInfo.Nvram.FirmwareFeaturesMask),
   OC_SCHEMA_STRING_IN ("MLB",                  OC_GLOBAL_CONFIG, PlatformInfo.Nvram.Mlb),
-  OC_SCHEMA_DATAF_IN  ("ROM",                  OC_GLOBAL_CONFIG, PlatformInfo.Nvram.Rom)
+  OC_SCHEMA_DATAF_IN  ("ROM",                  OC_GLOBAL_CONFIG, PlatformInfo.Nvram.Rom),
+  OC_SCHEMA_STRING_IN ("SystemUUID",           OC_GLOBAL_CONFIG, PlatformInfo.Nvram.SystemUuid),
 };
 
 STATIC
