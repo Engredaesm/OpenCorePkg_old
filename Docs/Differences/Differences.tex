@@ -1,7 +1,7 @@
 \documentclass[]{article}
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL PreviousConfiguration.tex   Mon Nov  2 14:00:40 2020
-%DIF ADD ../Configuration.tex        Mon Nov  2 23:46:58 2020
+%DIF DEL PreviousConfiguration.tex   Wed Nov  4 05:07:23 2020
+%DIF ADD ../Configuration.tex        Wed Nov  4 12:01:16 2020
 
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
@@ -3437,7 +3437,20 @@ diskutil mount -mountpoint /var/tmp/OSPersonalizationTemp $disk
   considered a security risk and thus is optional.
 
 \item
-  \texttt{BootProtect}\\
+  \DIFaddbegin \texttt{\DIFadd{BlacklistAppleUpdate}}\\
+  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ boolean}}\\
+  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{false}}\\
+  \textbf{\DIFadd{Description}}\DIFadd{: Ignore boot options trying to update Apple peripheral firmware
+  (e.g. }\texttt{\DIFadd{MultiUpdater.efi}}\DIFadd{).
+}
+
+  \emph{\DIFadd{Note}}\DIFadd{: This option exists due to some operating systems, namely macOS Big Sur,
+  being }\href{https://github.com/acidanthera/bugtracker/issues/1255}{incapable} \DIFadd{of
+  disabling firmware updates with the NVRAM variable (}\texttt{\DIFadd{run-efi-updater}}\DIFadd{).
+}
+
+\item
+  \DIFaddend \texttt{BootProtect}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: \texttt{None}\\
   \textbf{Description}: Attempt to provide bootloader persistence.
@@ -4131,7 +4144,8 @@ troubleshooting:
   \item \texttt{debug=VALUE} (debug mask)
   \item \texttt{io=VALUE} (\texttt{IOKit} debug mask)
   \item \texttt{keepsyms=1} (show panic log debug symbols)
-  \item \texttt{kextlog=VALUE} (kernel extension loading debug mask)
+  \item \texttt{kextlog=VALUE} (kernel extension loading debug mask\DIFaddbegin \DIFadd{)
+  }\item \texttt{\DIFadd{nvram-log=1}} \DIFadd{(enables AppleEFINVRAM logs}\DIFaddend )
   \item \texttt{nv\_disable=1} (disables NVIDIA GPU acceleration)
   \item \texttt{nvda\_drv=1} (legacy way to enable NVIDIA web driver, removed in 10.12)
   \item \texttt{npci=0x2000} (\href{https://www.insanelymac.com/forum/topic/260539-1068-officially-released/?do=findComment&comment=1707972}{legacy}, disables \texttt{kIOPCIConfiguratorPFM64})
