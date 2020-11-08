@@ -532,7 +532,12 @@ entries include:
   Directory used for storing supplemental tools.
 \item
   \texttt{OpenCore.efi} \\
-  Main booter driver responsible for operating system loading.
+  Main booter driver responsible for operating system loading. The directory
+  \texttt{OpenCore.efi} resides is called the \texttt{root directory}.
+  By default \texttt{root directory} is set to \texttt{EFI\textbackslash OC},
+  however, when launching \texttt{OpenCore.efi} directly or through
+  \texttt{Bootstrap.efi}, other directories containing \texttt{OpenCore.efi}
+  can also be supported.
 \item
   \texttt{config.plist} \\
   \texttt{OC Config}.
@@ -3807,8 +3812,33 @@ rm vault.pub
   Example: \texttt{OpenShell.efi}.
   \end{itemize}
 
-\end{enumerate}
+\item
+  \texttt{RealPath}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Description}: Pass full path to the tool when launching.
 
+  Passing tool directory may be unsafe for tool accidentally trying to access
+  files without checking their integrity and thus should generally be disabled.
+  Reason to enable this property may include cases where tools cannot work
+  without external files or may need them for better function (e.g.
+  \texttt{memtest86} for logging and configuration or \texttt{Shell} for
+  automatic script execution).
+
+  \emph{Note}: This property is only valid for \texttt{Tools}. For \texttt{Entries}
+  this property cannot be specified and is always \texttt{true}.
+
+\item
+  \texttt{TextMode}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Description}: Run the entry in text mode instead of graphics mode.
+
+  This setting may be benefitial to some older tools that require text output.
+  By default all the tools are launched in graphics mode. Read more about text
+  modes in \hyperref[uefioutputprops]{Output Properties} section below.
+
+\end{enumerate}
 
 \section{NVRAM}\label{nvram}
 

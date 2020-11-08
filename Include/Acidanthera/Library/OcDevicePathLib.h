@@ -187,6 +187,21 @@ OcFileDevicePathFullName (
   );
 
 /**
+  Retrieves full file path from device path allocating it on pool.
+
+  @param[in]  DevicePath      Device path to extract file path from.
+  @param[out] FileDevicePath  Pointer to file path part of the device path, optional.
+
+  @returns Path allocated from pool.
+  @retval NULL when missing.
+**/
+CHAR16 *
+OcCopyDevicePathFullName (
+  IN   EFI_DEVICE_PATH_PROTOCOL        *DevicePath,
+  OUT  EFI_DEVICE_PATH_PROTOCOL        **FileDevicePath  OPTIONAL
+  );
+
+/**
   Duplicate device path with DevicePathInstance appended if it is not present.
 
   @param[in] DevicePath          Device Path to append new instance to, optional.

@@ -46,11 +46,11 @@
 #error "Unknown target definition"
 #endif
 
-#define OPEN_CORE_BOOTSTRAP_PATH   L"EFI\\OC\\Bootstrap\\Bootstrap.efi"
-
-#define OPEN_CORE_DRIVER_PATH      L"EFI\\OC\\OpenCore.efi"
-
 #define OPEN_CORE_ROOT_PATH        L"EFI\\OC"
+
+#define OPEN_CORE_DRIVER_PATH      L"OpenCore.efi"
+
+#define OPEN_CORE_BOOTSTRAP_PATH   L"Bootstrap\\Bootstrap.efi"
 
 #define OPEN_CORE_CONFIG_PATH      L"config.plist"
 
@@ -280,17 +280,19 @@ OcMiscEarlyInit (
 
   @param[in]  Storage    OpenCore storage.
   @param[in]  Config     OpenCore configuration.
+  @param[in]  RootPath   Root load path.
   @param[in]  LoadPath   OpenCore loading path.
-  @param[out] LoadHandle OpenCore loading handle.
+  @param[in]  LoadHandle OpenCore loading handle.
 
   @retval EFI_SUCCESS on success, informational.
 **/
-EFI_STATUS
+VOID
 OcMiscMiddleInit (
   IN  OC_STORAGE_CONTEXT        *Storage,
   IN  OC_GLOBAL_CONFIG          *Config,
+  IN  CONST CHAR16              *RootPath  OPTIONAL,
   IN  EFI_DEVICE_PATH_PROTOCOL  *LoadPath  OPTIONAL,
-  OUT EFI_HANDLE                *LoadHandle
+  IN  EFI_HANDLE                LoadHandle OPTIONAL
   );
 
 /**
