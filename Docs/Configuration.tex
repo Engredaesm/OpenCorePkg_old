@@ -3407,6 +3407,9 @@ diskutil mount -mountpoint /var/tmp/OSPersonalizationTemp $disk
   \texttt{\textbackslash EFI\textbackslash OC\textbackslash Bootstrap\textbackslash Bootstrap.efi}
   boot option (\texttt{Boot9696}) in UEFI variable storage at bootloader startup. For this option
   to work \texttt{RequestBootVarRouting} is required to be enabled.
+  \item \texttt{BootstrapShort} --- create a short boot option instead of a complete one,
+  otherwise equivalent to \texttt{Bootstrap}. This variant is useful for some Insyde firmwares,
+  which cannot handle full device paths.
   \end{itemize}
 
   This option provides integration with third-party operating system installation and upgrade
@@ -3715,7 +3718,7 @@ rm vault.pub
   of Apple Secure Boot. The \texttt{ApECID} value must also be specified to
   achieve \texttt{Full Security}. Check \texttt{ForceSecureBootScheme}
   when using Apple Secure Boot on a virtual machine.
-
+  
   Enabling Apple Secure Boot is more demanding to incorrect configurations,
   buggy macOS installations, and unsupported setups. Things to consider:
 
@@ -3741,6 +3744,8 @@ rm vault.pub
     \item Since \texttt{Default} value will increase with time to support the latest
       major release operating system, it is not recommended to use \texttt{ApECID}
       and \texttt{Default} value together.
+    \item Installing macOS with Apple Secure Boot enabled is not possible while using HFS+ 
+      target volume. This may include HFS+ formatted drives when no spare APFS drive is available.
   \end{enumerate}
 
   Sometimes the already installed operating system may have outdated Apple Secure
