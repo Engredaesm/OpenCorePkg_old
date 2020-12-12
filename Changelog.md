@@ -1,5 +1,7 @@
 OpenCore Changelog
 ==================
+#### v0.6.5
+- Fixed installing OpenDuet on protected volumes
 
 #### v0.6.4
 - Added `BlacklistAppleUpdate` to fix 11.0 broken update optout
