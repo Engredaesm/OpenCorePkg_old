@@ -20,10 +20,10 @@
 #include <Library/OcAppleKernelLib.h>
 
 /**
-  Callback funtion to verify whether more than one BundlePath is duplicated in Kernel->Add.
+  Callback funtion to verify whether BundlePath is duplicated in Kernel->Add.
 
-  @param[in]  PrimaryEntry    The first entry to be checked.
-  @param[in]  SecondaryEntry  The second entry to be checked.
+  @param[in]  PrimaryEntry    Primary entry to be checked.
+  @param[in]  SecondaryEntry  Secondary entry to be checked.
 
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
@@ -39,8 +39,8 @@ KernelAddHasDuplication (
   CONST CHAR8                        *KernelAddPrimaryBundlePathString;
   CONST CHAR8                        *KernelAddSecondaryBundlePathString;
 
-  KernelAddPrimaryEntry              = *(OC_KERNEL_ADD_ENTRY **) PrimaryEntry;
-  KernelAddSecondaryEntry            = *(OC_KERNEL_ADD_ENTRY **) SecondaryEntry;
+  KernelAddPrimaryEntry              = *(CONST OC_KERNEL_ADD_ENTRY **) PrimaryEntry;
+  KernelAddSecondaryEntry            = *(CONST OC_KERNEL_ADD_ENTRY **) SecondaryEntry;
   KernelAddPrimaryBundlePathString   = OC_BLOB_GET (&KernelAddPrimaryEntry->BundlePath);
   KernelAddSecondaryBundlePathString = OC_BLOB_GET (&KernelAddSecondaryEntry->BundlePath);
 
@@ -48,10 +48,10 @@ KernelAddHasDuplication (
 }
 
 /**
-  Callback funtion to verify whether more than one Identifier is duplicated in Kernel->Block.
+  Callback funtion to verify whether Identifier is duplicated in Kernel->Block.
 
-  @param[in]  PrimaryEntry    The first entry to be checked.
-  @param[in]  SecondaryEntry  The second entry to be checked.
+  @param[in]  PrimaryEntry    Primary entry to be checked.
+  @param[in]  SecondaryEntry  Secondary entry to be checked.
 
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
@@ -67,8 +67,8 @@ KernelBlockHasDuplication (
   CONST CHAR8                          *KernelBlockPrimaryIdentifierString;
   CONST CHAR8                          *KernelBlockSecondaryIdentifierString;
 
-  KernelBlockPrimaryEntry              = *(OC_KERNEL_BLOCK_ENTRY **) PrimaryEntry;
-  KernelBlockSecondaryEntry            = *(OC_KERNEL_BLOCK_ENTRY **) SecondaryEntry;
+  KernelBlockPrimaryEntry              = *(CONST OC_KERNEL_BLOCK_ENTRY **) PrimaryEntry;
+  KernelBlockSecondaryEntry            = *(CONST OC_KERNEL_BLOCK_ENTRY **) SecondaryEntry;
   KernelBlockPrimaryIdentifierString   = OC_BLOB_GET (&KernelBlockPrimaryEntry->Identifier);
   KernelBlockSecondaryIdentifierString = OC_BLOB_GET (&KernelBlockSecondaryEntry->Identifier);
 
@@ -76,10 +76,10 @@ KernelBlockHasDuplication (
 }
 
 /**
-  Callback funtion to verify whether more than one BundlePath is duplicated in Kernel->Force.
+  Callback funtion to verify whether BundlePath is duplicated in Kernel->Force.
 
-  @param[in]  PrimaryEntry    The first entry to be checked.
-  @param[in]  SecondaryEntry  The second entry to be checked.
+  @param[in]  PrimaryEntry    Primary entry to be checked.
+  @param[in]  SecondaryEntry  Secondary entry to be checked.
 
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
@@ -98,8 +98,8 @@ KernelForceHasDuplication (
   CONST CHAR8                          *KernelForcePrimaryBundlePathString;
   CONST CHAR8                          *KernelForceSecondaryBundlePathString;
 
-  KernelForcePrimaryEntry              = *(OC_KERNEL_ADD_ENTRY **) PrimaryEntry;
-  KernelForceSecondaryEntry            = *(OC_KERNEL_ADD_ENTRY **) SecondaryEntry;
+  KernelForcePrimaryEntry              = *(CONST OC_KERNEL_ADD_ENTRY **) PrimaryEntry;
+  KernelForceSecondaryEntry            = *(CONST OC_KERNEL_ADD_ENTRY **) SecondaryEntry;
   KernelForcePrimaryBundlePathString   = OC_BLOB_GET (&KernelForcePrimaryEntry->BundlePath);
   KernelForceSecondaryBundlePathString = OC_BLOB_GET (&KernelForceSecondaryEntry->BundlePath);
 

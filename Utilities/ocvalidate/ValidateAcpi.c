@@ -17,10 +17,10 @@
 #include "OcValidateLib.h"
 
 /**
-  Callback funtion to verify whether more than one Path is duplicated in ACPI->Add.
+  Callback funtion to verify whether Path is duplicated in ACPI->Add.
 
-  @param[in]  PrimaryEntry    The first entry to be checked.
-  @param[in]  SecondaryEntry  The second entry to be checked.
+  @param[in]  PrimaryEntry    Primary entry to be checked.
+  @param[in]  SecondaryEntry  Secondary entry to be checked.
 
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
@@ -36,8 +36,8 @@ ACPIAddHasDuplication (
   CONST CHAR8                *ACPIAddPrimaryPathString;
   CONST CHAR8                *ACPIAddSecondaryPathString;
 
-  ACPIAddPrimaryEntry        = *(OC_ACPI_ADD_ENTRY **) PrimaryEntry;
-  ACPIAddSecondaryEntry      = *(OC_ACPI_ADD_ENTRY **) SecondaryEntry;
+  ACPIAddPrimaryEntry        = *(CONST OC_ACPI_ADD_ENTRY **) PrimaryEntry;
+  ACPIAddSecondaryEntry      = *(CONST OC_ACPI_ADD_ENTRY **) SecondaryEntry;
   ACPIAddPrimaryPathString   = OC_BLOB_GET (&ACPIAddPrimaryEntry->Path);
   ACPIAddSecondaryPathString = OC_BLOB_GET (&ACPIAddSecondaryEntry->Path);
 
