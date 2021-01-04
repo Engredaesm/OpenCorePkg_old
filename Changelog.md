@@ -18,6 +18,7 @@ OpenCore Changelog
 - Implemented MP3 audio decoding for audio assistant support
 - Added support for `PickerVariant` for more theme variants
 - Added `OC_ATTR_HIDE_THEMED_ICONS` `PickerAttribute` for Time Machine
+- Fixed OpenUsbKb compatibility with certain keyboards
 
 #### v0.6.4
 - Added `BlacklistAppleUpdate` to fix 11.0 broken update optout
