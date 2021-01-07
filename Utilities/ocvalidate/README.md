@@ -64,7 +64,8 @@ Utility to validate whether a `config.plist` matches requirements and convention
 ### Misc
 #### Boot
 - HibernateMode: Only `None`, `Auto`, `RTC`, or `NVRAM` are accepted.
-- PickerMode: Only `Builtin`, `External`, or `Apple` are accepted.
+- PickerMode: Only `Builtin`, `External`, or `Apple` are accepted. When set to `External`, `OpenCanopy.efi` should be loaded in `UEFI->Drivers`.
+- `PickerAudioAssist` requires `AudioSupport` in `UEFI->Audio` to be enabled.
 #### Security
 - AuthRestart: If enabled, `VirtualSMC.kext` should be present in `Kernel->Add`.
 - BootProtect: Only `None`, `Bootstrap`, or `BootstrapShort` are accepted. When set to the latter two, `RequestBootVarRouting` should be enabled in `UEFI->Quirks`.
@@ -80,10 +81,13 @@ Utility to validate whether a `config.plist` matches requirements and convention
 #### Generic
 - SystemProductName: Only real Mac models are accepted.
 - SystemMemoryStatus: Only `Auto`, `Upgradable`, or `Soldered` are accepted.
+- ProcessorType: Only known first byte can be set.
 
 ### UEFI
 #### APFS
 - When `EnableJumpstart` is enabled, `ScanPolicy` in `Misc->Security` should have `OC_SCAN_ALLOW_FS_APFS` (bit 8) set, together with `OC_SCAN_FILE_SYSTEM_LOCK` (bit 0) set. Or `ScanPolicy` should be `0` (failsafe value).
+#### Audio
+- When `AudioSupport` is enabled, AudioDevice cannot be empty and must be a valid path.
 #### Quirks
 - When `RequestBootVarRouting` is enabled, `OpenRuntime.efi` should be loaded in `UEFI->Drivers`.
 #### Drivers
@@ -91,6 +95,7 @@ Utility to validate whether a `config.plist` matches requirements and convention
 - When `Ps2KeyboardDxe.efi` is in use, `KeySupport` in `UEFI->Input` should always be enabled altogether.
 - `OpenUsbKbDxe.efi` and `Ps2KeyboardDxe.efi` should never co-exist.
 - When HFS+ filesystem driver or `AudioDxe.efi` is in use, `ConnectDrivers` should be enabled altogether.
+- When `OpenCanopy.efi` is in use, `PickerMode` in `Misc->Boot` should be set to `External`.
 #### Input
 - KeySupportMode: Only `Auto`, `V1`, `V2`, or `AMI` are accepted.
 - When `PointerSupport` is enabled, the value of `PointerSupportMode` should only be `ASUS`.

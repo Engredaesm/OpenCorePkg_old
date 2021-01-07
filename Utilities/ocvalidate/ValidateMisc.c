@@ -148,14 +148,21 @@ CheckMiscBoot (
 {
   UINT32            ErrorCount;
   OC_MISC_CONFIG    *UserMisc;
+  OC_UEFI_CONFIG    *UserUefi;
   UINT32            ConsoleAttributes;
   CONST CHAR8       *HibernateMode;
   UINT32            PickerAttributes;
+  UINT32            Index;
+  CONST CHAR8       *Driver;
+  BOOLEAN           HasOpenCanopyEfiDriver;
   CONST CHAR8       *PickerMode;
   CONST CHAR8       *PickerVariant;
+  BOOLEAN           IsPickerAudioAssistEnabled;
+  BOOLEAN           IsAudioSupportEnabled;
 
   ErrorCount        = 0;
   UserMisc          = &Config->Misc;
+  UserUefi          = &Config->Uefi;
 
   ConsoleAttributes = UserMisc->Boot.ConsoleAttributes;
   if ((ConsoleAttributes & ~0x7FU) != 0) {
@@ -178,20 +185,38 @@ CheckMiscBoot (
     ++ErrorCount;
   }
 
-  //
-  // FIXME: Is OpenCanopy.efi mandatory if set to External? Or is this just a suggestion?
-  //
+  HasOpenCanopyEfiDriver = FALSE;
+  for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
+    Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
+
+    if (AsciiStrCmp (Driver, "OpenCanopy.efi") == 0) {
+      HasOpenCanopyEfiDriver = TRUE;
+    }
+  }
   PickerMode        = OC_BLOB_GET (&UserMisc->Boot.PickerMode);
   if (AsciiStrCmp (PickerMode, "Builtin") != 0
     && AsciiStrCmp (PickerMode, "External") != 0
     && AsciiStrCmp (PickerMode, "Apple") != 0) {
     DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode is borked (Can only be Builtin, External, or Apple)!\n"));
     ++ErrorCount;
+  } else if (AsciiStrCmp (PickerMode, "External") == 0 && !HasOpenCanopyEfiDriver) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode is set to External, but OpenCanopy is not loaded at UEFI->Drivers!\n"));
+    ++ErrorCount;
+  } else if (HasOpenCanopyEfiDriver && AsciiStrCmp (PickerMode, "External") != 0) {
+    DEBUG ((DEBUG_WARN, "OpenCanopy.efi is loaded at UEFI->Drivers, but Misc->Boot->PickerMode is not set to External!\n"));
+    ++ErrorCount;
   }
 
   PickerVariant     = OC_BLOB_GET (&UserMisc->Boot.PickerVariant);
   if (PickerVariant[0] == '\0') {
     DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant cannot be empty!\n"));
+    ++ErrorCount;
+  }
+
+  IsPickerAudioAssistEnabled = UserMisc->Boot.PickerAudioAssist;
+  IsAudioSupportEnabled      = UserUefi->Audio.AudioSupport;
+  if (IsPickerAudioAssistEnabled && !IsAudioSupportEnabled) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAudioAssist is enabled, but UEFI->Audio->AudioSupport is not enabled altogether!\n"));
     ++ErrorCount;
   }
 
