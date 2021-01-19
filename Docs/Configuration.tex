@@ -756,6 +756,7 @@ and clarifications.
 is available, and inline for \texttt{static} variables and functions.
 \item Use line length of 120 characters or less, preferably 100 characters.
 \item Use spaces after casts, e.g. \texttt{(VOID *)(UINTN) Variable}.
+\item Use two spaces as indentations as always.
 \item Use SPDX license headers as shown in
 \href{https://github.com/acidanthera/bugtracker/issues/483}{acidanthera/bugtracker\#483}.
 \end{itemize}
@@ -3271,7 +3272,8 @@ cat Kernel.panic | grep macOSProcessedStackshotData |
   \textbf{Description}: Produce system report on ESP folder.
 
   This option will create a \texttt{SysReport} directory on ESP partition
-  unless it is already present. The directory will contain ACPI and SMBIOS dumps.
+  unless it is already present. The directory will contain ACPI, SMBIOS, and audio codec dumps.
+  Audio codec dumps require an audio backend driver to be loaded.
 
   \emph{Note}: For security reasons \texttt{SysReport} option is \textbf{not} available
   in \texttt{RELEASE} builds. Use a \texttt{DEBUG} build if this option is needed.
@@ -6076,6 +6078,7 @@ functioning. Feature highlights:
   Currently the only supported variant is \texttt{ASUS}, using specialised protocol available
   on select Z87 and Z97 ASUS boards. More details can be found in
   \href{https://github.com/LongSoft/UEFITool/pull/116}{\texttt{LongSoft/UefiTool\#116}}.
+  The value of this property cannot be empty if \texttt{PointerSupport} is enabled.
 
 \item
   \texttt{TimerResolution}\\
