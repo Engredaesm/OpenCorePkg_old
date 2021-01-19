@@ -85,7 +85,7 @@ OcStartImage (
 {
   EFI_STATUS                       Status;
   EFI_CONSOLE_CONTROL_SCREEN_MODE  OldMode;
-    CHAR16                           *DevicePathText;
+  CHAR16                           *DevicePathText;
 
       if (Chosen->DevicePath != NULL) {
         DevicePathText = ConvertDevicePathToText (Chosen->DevicePath, FALSE, FALSE);
@@ -107,7 +107,8 @@ OcStartImage (
         }
         FreePool (DevicePathText);
       }
-    OldMode = OcConsoleControlSetMode (
+    
+  OldMode = OcConsoleControlSetMode (
     LaunchInText ? EfiConsoleControlScreenText : EfiConsoleControlScreenGraphics
     );
 
@@ -155,12 +156,14 @@ OcMain (
   OcMiscMiddleInit (Storage, &mOpenCoreConfiguration, mStorageRoot, LoadPath, mStorageHandle);
   DEBUG ((DEBUG_INFO, "OC: OcLoadUefiSupport...\n"));
   OcLoadUefiSupport (Storage, &mOpenCoreConfiguration, &mOpenCoreCpuInfo);
-    if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
-      DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for all OSes...\n"));
-      OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
+  DEBUG_CODE_BEGIN ();
+  DEBUG ((DEBUG_INFO, "OC: OcMiscLoadSystemReport...\n"));
+  OcMiscLoadSystemReport (&mOpenCoreConfiguration, mStorageHandle);
+  DEBUG_CODE_END ();
+  if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
+  DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport...\n"));
     }
-    DEBUG ((DEBUG_INFO, "OC: OcMiscLateInit...\n"));
- 
+  OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
   DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
   OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
   DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
