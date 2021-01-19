@@ -162,8 +162,8 @@ OcMain (
   DEBUG_CODE_END ();
   if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
   DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport...\n"));
-    }
   OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
+  }
   DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
   OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
   DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
