@@ -5512,8 +5512,6 @@ Some of the known tools are listed below (builtin tools are marked with \textbf{
 \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{GopStop}}\textbf{*}
 & Test GraphicsOutput protocol with a
   \href{https://github.com/acidanthera/OpenCorePkg/tree/master/Application/GopStop}{simple scenario}. \\
-\href{https://github.com/acidanthera/OpenCorePkg}{\texttt{HdaCodecDump}}\textbf{*}
-& Parse and dump High Definition Audio codec information (requires \texttt{AudioDxe}). \\
 \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{KeyTester}}\textbf{*}
 & Test keyboard input in \texttt{SimpleText} mode. \\
 \href{https://www.memtest86.com}{\texttt{MemTest86}}
@@ -5914,7 +5912,7 @@ functioning. Feature highlights:
 \item
   \texttt{PlayChime}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: empty string\\
+  \textbf{Failsafe}: \texttt{Auto}\\
   \textbf{Description}: Play chime sound at startup.
 
   Enabling this setting plays boot chime through builtin audio support. Volume level
@@ -6035,7 +6033,7 @@ functioning. Feature highlights:
 \item
   \texttt{KeySupportMode}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: empty string\\
+  \textbf{Failsafe}: \texttt{Auto}\\
   \textbf{Description}: Set internal keyboard input translation to
   \texttt{AppleKeyMapAggregator} protocol mode.
 
