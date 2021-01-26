@@ -1,5 +1,5 @@
 ## @file
-#  General purpose test application.
+#  OpenCore primary application.
 #
 #  Copyright (c) 2019, vit9696. All rights reserved.<BR>
 #
@@ -14,14 +14,19 @@
 
 [Defines]
   INF_VERSION                         = 0x00010005
-  BASE_NAME                           = OpenCanopy
-  FILE_GUID                           = A72DCBF9-388A-47FE-B13A-591716F70609
-  MODULE_TYPE                         = UEFI_DRIVER
+  BASE_NAME                           = OpenCore
+  FILE_GUID                           = 9E1F2D62-016E-4CE7-BF5B-6A47286AE984
+  MODULE_TYPE                         = UEFI_APPLICATION
   VERSION_STRING                      = 1.0
   INF_VERSION                         = 0x00010005
   EDK_RELEASE_VERSION                 = 0x00020000
   EFI_SPECIFICATION_VERSION           = 0x00010000
   ENTRY_POINT                         = UefiMain
+
+#
+#  This flag specifies whether HII resource section is generated into PE image.
+#
+  UEFI_HII_RESOURCE_SECTION      = TRUE
 
 #
 # The following information is for reference only and not required by the build tools.
@@ -30,19 +35,7 @@
 #
 
 [Sources]
-  BitmapFont.c
-  BmfFile.h
-  BmfLib.h
-  OpenCanopy.c
-  OpenCanopy.h
-  GuiApp.c
-  GuiApp.h
-  GuiIo.h
-  Input/InputSimAbsPtr.c
-  Input/InputSimTextIn.c
-  OcBootstrap.c
-  Output/OutputStGop.c
-  Views/BootPicker.c
+  OpenCore.c
 
 [Packages]
   OpenCorePkg/OpenCorePkg.dec
@@ -51,30 +44,17 @@
   UefiCpuPkg/UefiCpuPkg.dec
 
 [Guids]
-  gAppleVendorVariableGuid
+  gOcVendorVariableGuid
 
 [Protocols]
-  gEfiGraphicsOutputProtocolGuid
-  gEfiSimplePointerProtocolGuid
-  gEfiAbsolutePointerProtocolGuid
-  gEfiUserInterfaceThemeProtocolGuid
-  gAppleEventProtocolGuid
-  gOcInterfaceProtocolGuid
-  gEfiLoadedImageProtocolGuid
+  gEfiAudioDecodeProtocolGuid         ## SOMETIMES_CONSUMES
+  gEfiDevicePathProtocolGuid          ## CONSUMES
+  gEfiDevicePathProtocolGuid          ## CONSUMES
+  gEfiLoadedImageProtocolGuid         ## CONSUMES
+  gEfiSimpleFileSystemProtocolGuid    ## CONSUMES
+  gOcBootstrapProtocolGuid            ## CONSUMES
+  gOcInterfaceProtocolGuid            ## SOMETIMES_CONSUMES
 
 [LibraryClasses]
-  BaseLib
-  BaseMemoryLib
-  DebugLib
-  FrameBufferBltLib
-  MemoryAllocationLib
-  MtrrLib
-  OcAppleKeyMapLib
-  OcCompressionLib
-  OcGuardLib
-  OcMiscLib
-  OcPngLib
-  OcStorageLib
-  TimerLib
-  UefiBootServicesTableLib
-  UefiDriverEntryPoint
+  OcMainLib
+  UefiApplicationEntryPoint

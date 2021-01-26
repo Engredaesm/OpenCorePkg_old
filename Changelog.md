@@ -13,6 +13,8 @@ OpenCore Changelog
 - Fixed crashes in OpenUsbKbDxe when handling unsupported devices
 - Removed `HdaCodecDump` application in favor of `SysReport`
 - Added `SetApfsTrimTimeout` to tune APFS trim command
+- Changed `OpenCore.efi` to application to improve FW compatibility
+- Added `DisableSecurityPolicy` UEFI quirk to workaround driver loading
 
 #### v0.6.5
 - Fixed installing OpenDuet on protected volumes
