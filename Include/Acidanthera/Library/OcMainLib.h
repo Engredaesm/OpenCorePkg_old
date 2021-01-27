@@ -1,7 +1,5 @@
 /** @file
-  Copyright (C) 2018, vit9696. All rights reserved.
-
-  All rights reserved.
+  Copyright (C) 2021, vit9696. All rights reserved.
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -10,10 +8,12 @@
 
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+
 **/
 
-#ifndef OPEN_CORE_H
-#define OPEN_CORE_H
+#ifndef OC_MAIN_LIB
+#define OC_MAIN_LIB
+
 
 #include <Library/OcAppleKernelLib.h>
 #include <Library/OcBootManagementLib.h>
@@ -81,7 +81,7 @@
 **/
 OC_RSA_PUBLIC_KEY *
 OcGetVaultKey (
-  IN  OC_BOOTSTRAP_PROTOCOL *Bootstrap
+  VOID
   );
 
 /**
@@ -369,3 +369,5 @@ OcLoadBooterUefiSupport (
   );
 
 #endif // OPEN_CORE_H
+
+#endif // OC_MAIN_LIB
