@@ -368,6 +368,5 @@ OcLoadBooterUefiSupport (
   IN OC_GLOBAL_CONFIG  *Config
   );
 
-#endif // OPEN_CORE_H
 
 #endif // OC_MAIN_LIB
