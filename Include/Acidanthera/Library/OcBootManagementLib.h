@@ -1374,12 +1374,17 @@ OcGetBootOrder (
 
 /**
   Register top-most priority boot option.
+  MatchSuffix allows for fuzzy replacement of the option,
+  i.e. when a new option replaces an old one with a matching suffix
+  but a different prefix.
 
-  @param[in]  OptionName    Option name to create.
-  @param[in]  DeviceHandle  Device handle of the file system.
-  @param[in]  FilePath      Bootloader path.
-  @param[in]  ShortForm     Whether the Device Path should be written in
-                            short-form.
+  @param[in]  OptionName       Option name to create.
+  @param[in]  DeviceHandle     Device handle of the file system.
+  @param[in]  FilePath         Bootloader path.
+  @param[in]  ShortForm        Whether the Device Path should be written in
+                               short-form.
+  @param[in]   MatchSuffix     The file Device Path suffix of a matching option.
+  @param[in]   MatchSuffixLen  The length, in characters, of MatchSuffix.
 
   @retval EFI_SUCCESS on success.
 **/
@@ -1388,7 +1393,9 @@ OcRegisterBootstrapBootOption (
   IN CONST CHAR16    *OptionName,
   IN EFI_HANDLE      DeviceHandle,
   IN CONST CHAR16    *FilePath,
-  IN BOOLEAN         ShortForm
+  IN BOOLEAN         ShortForm,
+  IN CONST CHAR16    *MatchSuffix,
+  IN UINTN           MatchSuffixLen
   );
 
 /**
