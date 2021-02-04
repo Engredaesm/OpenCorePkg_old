@@ -114,6 +114,10 @@ int ENTRY_POINT(int argc, const char *argv[]) {
   //
   DEBUG ((DEBUG_ERROR, "\n"));
   ErrorCount = CheckConfig (&Config);
+
+  OcConfigurationFree (&Config);
+  FreePool (ConfigFileBuffer);
+
   if (ErrorCount == 0) {
     DEBUG ((
       DEBUG_ERROR,
@@ -130,10 +134,9 @@ int ENTRY_POINT(int argc, const char *argv[]) {
       ErrorCount,
       ErrorCount > 1 ? "errors" : "error"
       ));
-  }
 
-  OcConfigurationFree (&Config);
-  FreePool (ConfigFileBuffer);
+    return EXIT_FAILURE;
+  }
 
   return 0;
 }
