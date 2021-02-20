@@ -15,6 +15,7 @@
 #include <Uefi.h>
 
 #include <Library/DebugLib.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Protocol/LoadedImage.h>
@@ -33,7 +34,7 @@ GetArguments (
   Status = gBS->HandleProtocol (
     gImageHandle,
     &gEfiShellParametersProtocolGuid,
-    (VOID**) &ShellParameters
+    (VOID **) &ShellParameters
     );
   if (!EFI_ERROR (Status)) {
     *Argc = ShellParameters->Argc;
@@ -44,13 +45,13 @@ GetArguments (
   Status = gBS->HandleProtocol (
     gImageHandle,
     &gEfiLoadedImageProtocolGuid,
-    (VOID**) &LoadedImage
+    (VOID **) &LoadedImage
     );
   if (EFI_ERROR (Status) || LoadedImage->LoadOptions == NULL) {
     return EFI_NOT_FOUND;
   }
 
-  STATIC CHAR16 *StArgv[2] = {L"Self", NULL};
+  STATIC CHAR16 *StArgv[2] = { L"Self", NULL };
   StArgv[1] = LoadedImage->LoadOptions;
   *Argc = ARRAY_SIZE (StArgv);
   *Argv = StArgv;
@@ -106,7 +107,7 @@ OcUninstallAllProtocolInstances (
     }
   }
 
-  gBS->FreePool (Handles);
+  FreePool (Handles);
 
   return Status;
 }
@@ -121,17 +122,47 @@ OcHandleProtocolFallback (
   EFI_STATUS Status;
 
   Status = gBS->HandleProtocol (
-                  Handle,
-                  Protocol,
-                  Interface
-                  );
+    Handle,
+    Protocol,
+    Interface
+    );
   if (EFI_ERROR (Status)) {
     Status = gBS->LocateProtocol (
-                    Protocol,
-                    NULL,
-                    Interface
-                    );
+      Protocol,
+      NULL,
+      Interface
+      );
   }
 
   return Status;
+}
+
+UINTN
+OcCountProtocolInstances (
+  IN EFI_GUID  *Protocol
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       HandleCount;
+  EFI_HANDLE  *HandleBuffer;
+
+  HandleCount = 0;
+
+  Status = gBS->LocateHandleBuffer (
+    ByProtocol,
+    Protocol,
+    NULL,
+    &HandleCount,
+    &HandleBuffer
+    );
+  if (EFI_ERROR (Status)) {
+    //
+    // No instance can be found on error.
+    //
+    return 0;
+  }
+
+  FreePool (HandleBuffer);
+
+  return HandleCount;
 }
