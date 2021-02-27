@@ -15,8 +15,6 @@
 #ifndef OC_AFTER_BOOT_COMPAT_LIB_H
 #define OC_AFTER_BOOT_COMPAT_LIB_H
 
-#include <Library/OcCpuLib.h>
-
 /**
   Booter patch structure.
 **/
@@ -193,14 +191,12 @@ typedef struct OC_ABC_SETTINGS_ {
   incompatible firmware to prevent boot failure and UEFI services breakage.
 
   @param[in]  Settings  Compatibility layer configuration.
-  @param[in]  CpuInfo   CPU information.
 
   @retval EFI_SUCCESS on success.
 **/
 EFI_STATUS
 OcAbcInitialize (
-  IN OC_ABC_SETTINGS  *Settings,
-  IN OC_CPU_INFO      *CpuInfo
+  IN OC_ABC_SETTINGS  *Settings
   );
 
 #endif // OC_AFTER_BOOT_COMPAT_LIB_H
