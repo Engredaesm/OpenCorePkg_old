@@ -154,6 +154,8 @@ OcAbcInitialize (
     sizeof (BootCompat->Settings)
     );
 
+  BootCompat->CpuInfo = CpuInfo;
+
   InstallServiceOverrides (BootCompat);
 
   return EFI_SUCCESS;

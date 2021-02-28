@@ -3382,6 +3382,7 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   \item \texttt{OCDC} --- OcDriverConnectionLib
   \item \texttt{OCDH} --- OcDataHubLib
   \item \texttt{OCDI} --- OcAppleDiskImageLib
+  \item \texttt{OCDM} --- OcDeviceMiscLib
   \item \texttt{OCFS} --- OcFileLib
   \item \texttt{OCFV} --- OcFirmwareVolumeLib
   \item \texttt{OCHS} --- OcHashServicesLib
@@ -3391,6 +3392,7 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   \item \texttt{OCJS} --- OcApfsLib
   \item \texttt{OCKM} --- OcAppleKeyMapLib
   \item \texttt{OCL} --- OcDebugLogLib
+  \item \texttt{OCM} --- OcMiscLib
   \item \texttt{OCMCO} --- OcMachoLib
   \item \texttt{OCME} --- OcHeciLib
   \item \texttt{OCMM} --- OcMemoryLib
@@ -6513,6 +6515,15 @@ functioning. Feature highlights:
 \subsection{Quirks Properties}\label{uefiquirkprops}
 
 \begin{enumerate}
+
+\item
+  \texttt{ActivateHpetSupport}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Description}: Activates HPET support.
+
+  Older boards like ICH6 may not always have HPET setting in the firmware preferences,
+  this option tries to force enable it.
 
 \item
   \texttt{DisableSecurityPolicy}\\
