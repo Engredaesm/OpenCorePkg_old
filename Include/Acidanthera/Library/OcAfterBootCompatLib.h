@@ -15,6 +15,8 @@
 #ifndef OC_AFTER_BOOT_COMPAT_LIB_H
 #define OC_AFTER_BOOT_COMPAT_LIB_H
 
+#include <Library/OcCpuLib.h>
+
 /**
   Booter patch structure.
 **/
@@ -109,6 +111,11 @@ typedef struct OC_ABC_SETTINGS_ {
   ///
   BOOLEAN  EnableSafeModeSlide;
   ///
+  /// Try to relocate memory to different address space when KASLR is disabled
+  /// and lower memory is unavailable.
+  ///
+  BOOLEAN  AllowRelocationBlock;
+  ///
   /// Attempt to protect certain memory regions from being incorrectly mapped:
   /// - CSM region could get used by the kernel due to being BS data,
   ///   which caused caused wake issues on older firmware.
@@ -191,12 +198,14 @@ typedef struct OC_ABC_SETTINGS_ {
   incompatible firmware to prevent boot failure and UEFI services breakage.
 
   @param[in]  Settings  Compatibility layer configuration.
+  @param[in]  CpuInfo   CPU information.
 
   @retval EFI_SUCCESS on success.
 **/
 EFI_STATUS
 OcAbcInitialize (
-  IN OC_ABC_SETTINGS  *Settings
+  IN OC_ABC_SETTINGS  *Settings,
+  IN OC_CPU_INFO      *CpuInfo
   );
 
 #endif // OC_AFTER_BOOT_COMPAT_LIB_H

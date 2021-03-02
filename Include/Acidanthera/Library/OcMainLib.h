@@ -31,7 +31,7 @@
   OpenCore version reported to log and NVRAM.
   OPEN_CORE_VERSION must follow X.Y.Z format, where X.Y.Z are single digits.
 **/
-#define OPEN_CORE_VERSION          "0.6.7"
+#define OPEN_CORE_VERSION          "0.6.8"
 
 /**
   OpenCore build type reported to log and NVRAM.
@@ -350,6 +350,7 @@ OcMiscUefiQuirksLoaded (
   IN OC_GLOBAL_CONFIG   *Config
   );
 
+
 /**
   Determine platform support for 64-bit kernel mode based
   on kernel version.
@@ -360,11 +361,5 @@ BOOLEAN
 OcPlatformIs64BitSupported (
   IN UINT32     KernelVersion
   );
-
-VOID
-OcLoadBooterUefiSupport (
-  IN OC_GLOBAL_CONFIG  *Config
-  );
-
 
 #endif // OC_MAIN_LIB

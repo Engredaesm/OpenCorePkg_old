@@ -17,6 +17,13 @@ OpenCore Changelog
 - Fixed CPU speed rounding for certain Xeon and Core 2 CPUs
 - Removed `KeyMergeThreshold` as it never functioned anyway
 - Added `acdtinfo` utility to lookup certain products
+- Fixed `FSBFrequency` calculation with fractional multiplier
+- Fixed showing core count for some AMD CPUs
+- Added `ResetTrafficClass` to reset TCSEL to T0 on legacy HDA
+- Fixed default boot entry selection without timeout for builtin picker
+- Added ocpasswordgen utility to generate OpenCore password data
+- Added `ActivateHpetSupport` quirk to activate HPET support
+- Fixed `opencore-version` reporting the incorrect version in rare cases
 
 #### v0.6.6
 - Added keyboard and pointer entry scroll support in OpenCanopy
@@ -66,7 +73,7 @@ OpenCore Changelog
 - Fixed OpenUsbKb compatibility with certain keyboards
 
 #### v0.6.4
-- Added `BlacklistAppleUpdate` to fix 11.0 broken update optout
+- Added `BlacklistAppleUpdate` to fix macOS 11 broken update optout
 - Dropped HII services from OpenDuet improving size and performance
 - Fixed patching of injected kexts in mkext
 - Added support for launching from relative paths
@@ -74,7 +81,21 @@ OpenCore Changelog
 - Allowed launching tools and entries in text mode via `TextMode`
 - Updated builtin firmware versions for SMBIOS and the rest
 - Fixed ACPI patches not applying if tables are in locked memory
-- Fixed `EnableSafeModeSlide` on macOS 11.0
+- Fixed `EnableSafeModeSlide` on macOS 11
+- Added `AllowRelocationBlock` quirk for older macOS and safe mode
+- Fixed CPU frequency calculation on AMD 19h family
+- Updated recovery_urls
+- Fixed `DisableSingleUser` quirk when Apple Secure Boot is enabled
+- Added `BootstrapShort` to workaround buggy Insyde firmware
+- Changed `Bootstrap(Short)` to choose dynamic entry (requires NVRAM reset)
+- Avoided `Boot` prefix in `RequestBootVarRouting` to workaround AMI issues
+- Added bootloader patch support in `Booter` `Patch` section
+- Fixed startup hang on firmware that permit timer function re-entrance
+- Made pointer control optional for OpenCanopy via `PickerAttributes`
+- Added support for `StartupMute` variable in `PlayChime`
+- Added support for per-volume icons for APFS on Preboot
+- Removed HII dependency from OpenUsbKbDxe driver
+- Fixed undefined behavior in OpenDuet causing random crashes and hangs
 
 #### v0.6.3
 - Added support for xml comments in plist files

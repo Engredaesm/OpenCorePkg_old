@@ -24,7 +24,6 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/OcBootManagementLib.h>
-#include <Library/OcCpuLib.h>
 #include <Library/OcCryptoLib.h>
 #include <Library/OcDeviceTreeLib.h>
 #include <Library/OcMachoLib.h>
@@ -229,7 +228,8 @@ ShouldUseCustomSlideOffset (
   IN OUT SLIDE_SUPPORT_STATE   *SlideSupport,
   IN     EFI_GET_MEMORY_MAP    GetMemoryMap       OPTIONAL,
   IN     OC_MEMORY_FILTER      FilterMap          OPTIONAL,
-  IN     VOID                  *FilterMapContext  OPTIONAL
+  IN     VOID                  *FilterMapContext  OPTIONAL,
+  IN     BOOLEAN               HasSandyOrIvy
   )
 {
   EFI_PHYSICAL_ADDRESS   AllocatedMapPages;
@@ -240,7 +240,6 @@ ShouldUseCustomSlideOffset (
   EFI_STATUS             Status;
   UINTN                  DescriptorSize;
   UINT32                 DescriptorVersion;
-  OC_CPU_GENERATION      CpuGeneration;
   UINTN                  Index;
   UINTN                  Slide;
   UINTN                  NumEntries;
@@ -280,9 +279,7 @@ ShouldUseCustomSlideOffset (
     FilterMap (FilterMapContext, MemoryMapSize, MemoryMap, DescriptorSize);
   }
 
-  CpuGeneration = OcCpuGetGeneration ();
-  SlideSupport->HasSandyOrIvy = CpuGeneration == OcCpuGenerationSandyBridge ||
-                                CpuGeneration == OcCpuGenerationIvyBridge;
+  SlideSupport->HasSandyOrIvy = HasSandyOrIvy;
 
   SlideSupport->EstimatedKernelArea = (UINTN) EFI_PAGES_TO_SIZE (
     OcCountRuntimePages (MemoryMapSize, MemoryMap, DescriptorSize, NULL)
@@ -806,8 +803,15 @@ AppleSlideGetVariable (
         Data
         );
     } else if (StrCmp (VariableName, L"boot-args") == 0
-      && !BootCompat->ServiceState.AppleCustomSlide
-      && ShouldUseCustomSlideOffset (&BootCompat->SlideSupport, GetMemoryMap, FilterMap, FilterMapContext)) {
+      && (!BootCompat->ServiceState.AppleCustomSlide || BootCompat->Settings.AllowRelocationBlock)
+      && ShouldUseCustomSlideOffset (
+        &BootCompat->SlideSupport,
+        GetMemoryMap,
+        FilterMap,
+        FilterMapContext,
+        BootCompat->CpuInfo->CpuGeneration == OcCpuGenerationSandyBridge
+          || BootCompat->CpuInfo->CpuGeneration == OcCpuGenerationIvyBridge)
+      && !BootCompat->ServiceState.AppleCustomSlide) {
       //
       // When we cannot allow some KASLR values due to used address we generate
       // a random slide value among the valid options, which we we pass via boot-args.
@@ -819,6 +823,9 @@ AppleSlideGetVariable (
       // because on older boards allocated memory above BASE_4GB causes instant reboots, and
       // on the only (so far) problematic X99 and X299 we have no free region for our pool anyway.
       // In any case, the current APTIOFIX_SPECULATED_KERNEL_SIZE value appears to work reliably.
+      //
+      // Note, when relocation block support is enabled, we always do the slide analysis
+      // (even when slide=0 is requested) to understand whether we need it or not at a later stage.
       //
       return GetVariableBootArgs (
         &BootCompat->SlideSupport,
@@ -858,4 +865,37 @@ AppleSlideRestore (
   // this is especially important.
   //
   HideSlideFromOs (SlideSupport, BootArgs);
+}
+
+UINTN
+AppleSlideGetRelocationSize (
+  IN OUT BOOT_COMPAT_CONTEXT   *BootCompat
+  )
+{
+  SLIDE_SUPPORT_STATE  *SlideSupport;
+
+  SlideSupport = &BootCompat->SlideSupport;
+
+  //
+  // When we could not have performed the analysis we have nothing to offer.
+  //
+  if (!SlideSupport->HasMemoryMapAnalysis) {
+    return 0;
+  }
+
+  //
+  // When we have no slides available we assume 0 is also unavailable.
+  //
+  if (SlideSupport->ValidSlideCount == 0) {
+    return BootCompat->SlideSupport.EstimatedKernelArea;
+  }
+
+  //
+  // If the first slide is not zero, then zero is unavailable.
+  //
+  if (SlideSupport->ValidSlides[0] != 0) {
+    return BootCompat->SlideSupport.EstimatedKernelArea;
+  }
+
+  return 0;
 }

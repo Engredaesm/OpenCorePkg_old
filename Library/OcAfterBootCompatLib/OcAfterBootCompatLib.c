@@ -96,7 +96,8 @@ GetBootCompatContext (
 
 EFI_STATUS
 OcAbcInitialize (
-  IN OC_ABC_SETTINGS  *Settings
+  IN OC_ABC_SETTINGS  *Settings,
+  IN OC_CPU_INFO      *CpuInfo
   )
 {
   EFI_STATUS           Status;
@@ -111,7 +112,8 @@ OcAbcInitialize (
 
   DEBUG ((
     DEBUG_INFO,
-    "OCABC: RTDFRG %d DEVMMIO %d NOSU %d NOVRWR %d NOSB %d NOHBMAP %d SMSLIDE %d WRUNPROT %d\n",
+    "OCABC: ALRBL %d RTDFRG %d DEVMMIO %d NOSU %d NOVRWR %d NOSB %d NOHBMAP %d SMSLIDE %d WRUNPROT %d\n",
+    Settings->AllowRelocationBlock,
     Settings->AvoidRuntimeDefrag,
     Settings->DevirtualiseMmio,
     Settings->DisableSingleUser,

@@ -366,6 +366,20 @@ AppleMapPrepareForBooting (
     }
   }
 
+  if (BootCompat->KernelState.RelocationBlock != 0) {
+    //
+    // When using Relocation Block EfiBoot will not virtualize the addresses since they
+    // cannot be mapped 1:1 due to any region from the relocation block being outside
+    // of static XNU vaddr to paddr mapping. This causes a clean early exit in their
+    // SetVirtualAddressMap calling routine avoiding gRT->SetVirtualAddressMap.
+    //
+    // For this reason we need to perform it ourselves right here before we restored
+    // runtime memory protections as we also need to defragment EFI_SYSTEM_TABLE memory
+    // to be accessible from XNU.
+    //
+    AppleRelocationVirtualize (BootCompat, &BA);
+  }
+
   if (BootCompat->Settings.AvoidRuntimeDefrag) {
     MemoryMapSize  = *BA.MemoryMapSize;
     MemoryMap      = (EFI_MEMORY_DESCRIPTOR *)(UINTN) (*BA.MemoryMap);
@@ -400,6 +414,10 @@ AppleMapPrepareForBooting (
         sizeof (*BootCompat->KernelState.ConfigurationTable) * BA.SystemTable->NumberOfTableEntries
         );
     }
+  }
+
+  if (BootCompat->KernelState.RelocationBlock != 0) {
+    AppleRelocationRebase (BootCompat, &BA);
   }
 }
 
@@ -462,6 +480,11 @@ AppleMapPrepareForHibernateWake (
           return;
         }
 
+        //
+        // TODO: If we try to work on hibernation support with relocation block
+        // We will need to add a call similar to AppleRelocationVirtualize here.
+        //
+
         if (BootCompat->Settings.AvoidRuntimeDefrag) {
           //
           // I think we should not be there, but ideally all quirks are relatively independent.
@@ -480,6 +503,11 @@ AppleMapPrepareForHibernateWake (
 
     Handoff = (IOHibernateHandoff *) ((UINTN) Handoff + sizeof(Handoff) + Handoff->bytecount);
   }
+
+  //
+  // TODO: To support hibernation with relocation block we will need to add a call similar
+  // to AppleRelocationRebase here.
+  //
 }
 
 VOID
@@ -519,14 +547,6 @@ AppleMapPrepareBooterState (
   //
   AppleMapPrepareMemoryPool (
     BootCompat
-    );
-
-  //
-  // This function may be called twice, do not redo in this case.
-  //
-  AppleMapPlatformSaveState (
-    &BootCompat->KernelState.AsmState,
-    &BootCompat->KernelState.KernelJump
     );
 
   if (BootCompat->Settings.AvoidRuntimeDefrag) {
@@ -582,18 +602,17 @@ AppleMapPrepareBooterState (
 VOID
 AppleMapPrepareKernelJump (
   IN OUT BOOT_COMPAT_CONTEXT    *BootCompat,
-  IN     UINTN                  ImageAddress,
-  IN     BOOLEAN                AppleHibernateWake
+  IN     EFI_PHYSICAL_ADDRESS   CallGate
   )
 {
-  UINT64                   KernelEntryVaddr;
-  UINT32                   KernelEntry;
-  IOHibernateImageHeader   *ImageHeader;
+  CALL_GATE_JUMP           *CallGateJump;
 
   //
   // There is no reason to patch the kernel when we do not need it.
   //
-  if (!BootCompat->Settings.AvoidRuntimeDefrag && !BootCompat->Settings.DiscardHibernateMap) {
+  if (!BootCompat->Settings.AvoidRuntimeDefrag
+    && !BootCompat->Settings.DiscardHibernateMap
+    && !BootCompat->Settings.AllowRelocationBlock) {
     return;
   }
 
@@ -603,65 +622,27 @@ AppleMapPrepareKernelJump (
 #endif
 
   //
-  // Check whether we have image address and abort if not.
+  // Check whether we have address and abort if not.
   //
-  if (ImageAddress == 0) {
-    RUNTIME_DEBUG ((DEBUG_ERROR, "OCABC: Failed to find image address, hibernate %d\n", AppleHibernateWake));
+  if (CallGate == 0) {
+    RUNTIME_DEBUG ((DEBUG_ERROR, "OCABC: Failed to find call gate address\n"));
     return;
   }
 
-  if (!AppleHibernateWake) {
-    //
-    // ImageAddress points to the first kernel segment, __HIB.
-    // Kernel image header is located in __TEXT, which follows __HIB.
-    //
-    ImageAddress += KERNEL_BASE_PADDR;
-
-    //
-    // Cut higher virtual address bits.
-    //
-    KernelEntryVaddr = MachoRuntimeGetEntryAddress (
-      (VOID*) ImageAddress
-      );
-    if (KernelEntryVaddr == 0) {
-      RUNTIME_DEBUG ((DEBUG_ERROR, "OCABC: Kernel entry point was not found!"));
-      return;
-    }
-
-    //
-    // Perform virtual to physical address conversion by subtracting __TEXT base
-    // and adding current physical kernel location.
-    //
-    KernelEntry = (UINT32) (KernelEntryVaddr - KERNEL_TEXT_VADDR + ImageAddress);
-  } else {
-    //
-    // Read kernel entry from hibernation image and patch it with jump.
-    // At this stage HIB section is not yet copied from sleep image to it's
-    // proper memory destination. so we'll patch entry point in sleep image.
-    // Note the virtual -> physical conversion through truncation.
-    //
-    ImageHeader = (IOHibernateImageHeader *) ImageAddress;
-    KernelEntry = ((UINT32)(UINTN) &ImageHeader->fileExtentMap[0])
-      + ImageHeader->fileExtentMapSize + ImageHeader->restore1CodeOffset;
-  }
+  CallGateJump = (VOID *)(UINTN) CallGate;
 
   //
-  // Save original kernel entry code.
+  // Move call gate jump bytes front.
   //
   CopyMem (
-    &BootCompat->KernelState.KernelOrg[0],
-    (VOID *)(UINTN) KernelEntry,
-    sizeof (BootCompat->KernelState.KernelOrg)
+    CallGateJump + 1,
+    CallGateJump,
+    ESTIMATED_CALL_GATE_SIZE
     );
 
-  //
-  // Copy kernel jump code to kernel entry address.
-  //
-  CopyMem (
-    (VOID *)(UINTN) KernelEntry,
-    &BootCompat->KernelState.KernelJump,
-    sizeof (BootCompat->KernelState.KernelJump)
-    );
+  CallGateJump->Command  = 0x25FF;
+  CallGateJump->Argument = 0x0;
+  CallGateJump->Address  = (UINTN) AppleMapPrepareKernelState;
 }
 
 EFI_STATUS
@@ -727,10 +708,11 @@ UINTN
 EFIAPI
 AppleMapPrepareKernelState (
   IN UINTN    Args,
-  IN BOOLEAN  ModeX64
+  IN UINTN    EntryPoint
   )
 {
   BOOT_COMPAT_CONTEXT    *BootCompatContext;
+  KERNEL_CALL_GATE       CallGate;
 
   BootCompatContext = GetBootCompatContext ();
 
@@ -746,14 +728,18 @@ AppleMapPrepareKernelState (
       );
   }
 
-  //
-  // Restore original kernel entry code.
-  //
-  CopyMem (
-    BootCompatContext->KernelState.AsmState.KernelEntry,
-    &BootCompatContext->KernelState.KernelOrg[0],
-    sizeof (BootCompatContext->KernelState.KernelOrg)
+  CallGate = (KERNEL_CALL_GATE)(UINTN) (
+    BootCompatContext->ServiceState.KernelCallGate + CALL_GATE_JUMP_SIZE
     );
 
-  return Args;
+  if (BootCompatContext->KernelState.RelocationBlock != 0) {
+    return AppleRelocationCallGate (
+      BootCompatContext,
+      CallGate,
+      Args,
+      EntryPoint
+      );
+  }
+
+  return CallGate (Args, EntryPoint);
 }

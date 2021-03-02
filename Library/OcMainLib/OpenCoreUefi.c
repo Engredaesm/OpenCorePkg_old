@@ -37,6 +37,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/OcCpuLib.h>
 #include <Library/OcDataHubLib.h>
 #include <Library/OcDebugLogLib.h>
+#include <Library/OcDeviceMiscLib.h>
 #include <Library/OcDevicePropertyLib.h>
 #include <Library/OcDriverConnectionLib.h>
 #include <Library/OcFirmwareVolumeLib.h>
@@ -511,7 +512,8 @@ OcInstallPermissiveSecurityPolicy (
 
 VOID
 OcLoadBooterUefiSupport (
-  IN OC_GLOBAL_CONFIG  *Config
+  IN OC_GLOBAL_CONFIG  *Config,
+  IN OC_CPU_INFO       *CpuInfo
   )
 {
   OC_ABC_SETTINGS        AbcSettings;
@@ -528,6 +530,7 @@ OcLoadBooterUefiSupport (
   AbcSettings.DisableVariableWrite   = Config->Booter.Quirks.DisableVariableWrite;
   AbcSettings.ProtectSecureBoot      = Config->Booter.Quirks.ProtectSecureBoot;
   AbcSettings.DiscardHibernateMap    = Config->Booter.Quirks.DiscardHibernateMap;
+  AbcSettings.AllowRelocationBlock   = Config->Booter.Quirks.AllowRelocationBlock;
   AbcSettings.EnableSafeModeSlide    = Config->Booter.Quirks.EnableSafeModeSlide;
   AbcSettings.EnableWriteUnprotector = Config->Booter.Quirks.EnableWriteUnprotector;
   AbcSettings.ForceExitBootServices  = Config->Booter.Quirks.ForceExitBootServices;
@@ -655,7 +658,7 @@ OcLoadBooterUefiSupport (
   AbcSettings.ExitBootServicesHandlers = mOcExitBootServicesHandlers;
   AbcSettings.ExitBootServicesHandlerContexts = mOcExitBootServicesContexts;
 
-  OcAbcInitialize (&AbcSettings);
+  OcAbcInitialize (&AbcSettings, CpuInfo);
 }
 
 VOID
@@ -727,11 +730,14 @@ OcLoadUefiSupport (
   //
   // Setup Apple bootloader specific UEFI features.
   //
-  
-    if (Config->Booter.Quirks.EnableForAll) {
-      OcLoadBooterUefiSupport (Config);
+    if (Config->Booter.Quirks.EnableForAll){
+  OcLoadBooterUefiSupport (Config, CpuInfo);
     }
-    if (Config->Uefi.Quirks.IgnoreInvalidFlexRatio) {
+  if (Config->Uefi.Quirks.ActivateHpetSupport) {
+    ActivateHpetSupport ();
+  }
+
+  if (Config->Uefi.Quirks.IgnoreInvalidFlexRatio) {
     OcCpuCorrectFlexRatio (CpuInfo);
   }
 

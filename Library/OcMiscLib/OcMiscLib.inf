@@ -49,4 +49,3 @@
   DataPatcher.c
   ImageRunner.c
   ProtocolSupport.c
-  Math.c

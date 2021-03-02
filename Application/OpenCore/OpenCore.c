@@ -87,27 +87,21 @@ OcStartImage (
   EFI_CONSOLE_CONTROL_SCREEN_MODE  OldMode;
   CHAR16                           *DevicePathText;
 
-      if (Chosen->DevicePath != NULL) {
-        DevicePathText = ConvertDevicePathToText (Chosen->DevicePath, FALSE, FALSE);
+    if (Chosen->DevicePath != NULL) {
+      DevicePathText = ConvertDevicePathToText (Chosen->DevicePath, FALSE, FALSE);
         if ((Chosen->Type & OC_BOOT_APPLE_ANY) != 0 || StrStr(DevicePathText, L"\\System\\Library\\CoreServices\\boot.efi") != NULL) {
-          if (!mOpenCoreConfiguration.Booter.Quirks.EnableForAll) {
-            DEBUG ((DEBUG_INFO, "OC: OcLoadBooterUefiSupport...\n"));
-            OcLoadBooterUefiSupport (&mOpenCoreConfiguration);
-          }
-          
-          if (!mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
-            DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for macOS...\n"));
-            OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
-          }
-          
-          DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
-          OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
-          DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
-          OcLoadDevPropsSupport (&mOpenCoreConfiguration);
+        if (!mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
+          DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for macOS...\n"));
+          OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
         }
-        FreePool (DevicePathText);
+        
+        DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
+        OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
+        DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
+        OcLoadDevPropsSupport (&mOpenCoreConfiguration);
       }
-    
+      FreePool (DevicePathText);
+    }
   OldMode = OcConsoleControlSetMode (
     LaunchInText ? EfiConsoleControlScreenText : EfiConsoleControlScreenGraphics
     );
@@ -160,10 +154,10 @@ OcMain (
   DEBUG ((DEBUG_INFO, "OC: OcMiscLoadSystemReport...\n"));
   OcMiscLoadSystemReport (&mOpenCoreConfiguration, mStorageHandle);
   DEBUG_CODE_END ();
-  if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
+    if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
   DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport...\n"));
   OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
-  }
+    }
   DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
   OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
   DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
