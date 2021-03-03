@@ -37,8 +37,7 @@ VOID
   IN     UINT32                  OffsetX,
   IN     UINT32                  OffsetY,
   IN     UINT32                  Width,
-  IN     UINT32                  Height,
-  IN     BOOLEAN                 RequestDraw
+  IN     UINT32                  Height
   );
 
 typedef
@@ -108,8 +107,7 @@ typedef struct GUI_SCREEN_CURSOR_ GUI_SCREEN_CURSOR;
 typedef
 CONST GUI_IMAGE *
 (*GUI_CURSOR_GET_IMAGE)(
-  IN OUT GUI_SCREEN_CURSOR       *This,
-  IN     BOOT_PICKER_GUI_CONTEXT *Context
+  IN BOOT_PICKER_GUI_CONTEXT *Context
   );
 
 typedef
@@ -173,8 +171,7 @@ GuiObjDrawDelegate (
   IN     UINT32                  OffsetX,
   IN     UINT32                  OffsetY,
   IN     UINT32                  Width,
-  IN     UINT32                  Height,
-  IN     BOOLEAN                 RequestDraw
+  IN     UINT32                  Height
   );
 
 GUI_OBJ *
@@ -201,15 +198,23 @@ VOID
 GuiDrawToBuffer (
   IN     CONST GUI_IMAGE      *Image,
   IN     UINT8                Opacity,
-  IN     BOOLEAN              Fill,
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                BaseX,
   IN     INT64                BaseY,
   IN     UINT32               OffsetX,
   IN     UINT32               OffsetY,
   IN     UINT32               Width,
-  IN     UINT32               Height,
-  IN     BOOLEAN              RequestDraw
+  IN     UINT32               Height
+  );
+
+VOID
+GuiDrawToBufferFill (
+  IN     CONST GUI_IMAGE      *Image,
+  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
+  IN     UINT32               PosX,
+  IN     UINT32               PosY,
+  IN     UINT32               Width,
+  IN     UINT32               Height
   );
 
 VOID
@@ -218,8 +223,7 @@ GuiDrawScreen (
   IN     INT64                X,
   IN     INT64                Y,
   IN     UINT32               Width,
-  IN     UINT32               Height,
-  IN     BOOLEAN              RequestDraw
+  IN     UINT32               Height
   );
 
 VOID
@@ -227,8 +231,7 @@ GuiRedrawObject (
   IN OUT GUI_OBJ              *Obj,
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                BaseX,
-  IN     INT64                BaseY,
-  IN     BOOLEAN              RequestDraw
+  IN     INT64                BaseY
   );
 
 VOID
@@ -242,12 +245,8 @@ GuiViewInitialize (
 
 VOID
 GuiViewDeinitialize (
-  IN OUT GUI_DRAWING_CONTEXT   *DrawContext
-  );
-
-CONST GUI_SCREEN_CURSOR *
-GuiViewCurrentCursor (
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext
+  IN OUT GUI_DRAWING_CONTEXT   *DrawContext,
+  OUT    BOOT_PICKER_GUI_CONTEXT *GuiContext
   );
 
 VOID
@@ -281,6 +280,19 @@ GuiLibDestruct (
 
 VOID
 GuiBlendPixel (
+  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel,
+  IN     UINT8                                Opacity
+  );
+
+VOID
+GuiBlendPixelSolid (
+  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel
+  );
+
+VOID
+GuiBlendPixelOpaque (
   IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
   IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel,
   IN     UINT8                                Opacity

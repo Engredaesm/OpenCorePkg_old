@@ -34,14 +34,10 @@ InternalGuiOutputLocateGop (
     (VOID **) &Gop
     );
   if (EFI_ERROR (Status)) {
-    Status = gBS->LocateProtocol (
-      &gEfiGraphicsOutputProtocolGuid,
-      NULL,
-      (VOID **) &Gop
-      );
-    if (EFI_ERROR (Status)) {
-      return NULL;
-    }
+    //
+    // Do not fall back to other GOP instances to match AppleEvent.
+    //
+    return NULL;
   }
 
   return Gop;
@@ -52,7 +48,9 @@ GuiOutputConstruct (
   VOID
   )
 {
-  GUI_OUTPUT_CONTEXT            *Context;
+  // TODO: alloc on the fly?
+  STATIC GUI_OUTPUT_CONTEXT Context;
+
   EFI_GRAPHICS_OUTPUT_PROTOCOL  *Gop;
 
   Gop = InternalGuiOutputLocateGop();
@@ -60,13 +58,8 @@ GuiOutputConstruct (
     return NULL;
   }
 
-  Context = AllocatePool (sizeof (*Context));
-  if (Context == NULL) {
-    return NULL;
-  }
-
-  Context->Gop = Gop;
-  return Context;
+  Context.Gop = Gop;
+  return &Context;
 }
 
 EFI_STATUS
@@ -112,5 +105,5 @@ GuiOutputDestruct (
   )
 {
   ASSERT (Context != NULL);
-  FreePool (Context);
+  ZeroMem (Context, sizeof (*Context));
 }
