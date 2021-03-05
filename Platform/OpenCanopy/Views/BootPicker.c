@@ -1489,60 +1489,28 @@ InternalBootPickerAnimateOpacity (
   IN     UINT64                  CurrentTime
   )
 {
-  INT64 BaseX;
-  INT64 BaseY;
-
   ASSERT (DrawContext != NULL);
 
   mBootPickerOpacity = (UINT8)GuiGetInterpolatedValue (&mBpAnimInfoOpacity, CurrentTime);
   //
-  // The entry list has been scrolled, the entire horizontal space to also cover
-  // the scroll buttons.
+  // The screen is drawn by the offset animation, which is always called after
+  // this one. Do not draw here to not cause pointless overhead.
   //
-  DEBUG_CODE_BEGIN ();
-  GuiGetBaseCoords (
-    &mBootPickerContainer.Obj,
-    DrawContext,
-    &BaseX,
-    &BaseY
-    );
-
-  ASSERT (BaseX == mBootPickerContainer.Obj.OffsetX);
-  ASSERT (BaseY == mBootPickerContainer.Obj.OffsetY);
-
-  GuiGetBaseCoords (
-    &mBootPickerLeftScroll.Hdr.Obj,
-    DrawContext,
-    &BaseX,
-    &BaseY
-    );
-  ASSERT (BaseY >= mBootPickerContainer.Obj.OffsetY);
-  ASSERT (BaseY + mBootPickerLeftScroll.Hdr.Obj.Height <= mBootPickerContainer.Obj.OffsetY + mBootPickerContainer.Obj.Height);
-
-  GuiGetBaseCoords (
-    &mBootPickerRightScroll.Hdr.Obj,
-    DrawContext,
-    &BaseX,
-    &BaseY
-    );
-  ASSERT (BaseY >= mBootPickerContainer.Obj.OffsetY);
-  ASSERT (BaseY + mBootPickerRightScroll.Hdr.Obj.Height <= mBootPickerContainer.Obj.OffsetY + mBootPickerContainer.Obj.Height);
-  DEBUG_CODE_END ();
-
-  GuiDrawScreen (
+  // FIXME: Investigate and opt for one of the two.
+  //    1. Merge the offset and opacity animations into one.
+  //    2. Add a layer of literal 'draw requests' to merge and process drawing
+  //       requests after all animations and events have been processed.
+  //
+  /*GuiDrawScreen (
     DrawContext,
     mBootPickerContainer.Obj.OffsetX,
     mBootPickerContainer.Obj.OffsetY,
     DrawContext->Screen->Width,
     mBootPickerContainer.Obj.Height
-    );
+    );*/
 
   if (mBootPickerOpacity == mBpAnimInfoOpacity.EndValue) {
     return TRUE;
-    /*UINT32 OrigVal = mBpAnimInfoOpacity.EndValue;
-    mBpAnimInfoOpacity.EndValue   = mBpAnimInfoOpacity.StartValue;
-    mBpAnimInfoOpacity.StartValue = OrigVal;
-    mBpAnimInfoOpacity.StartTime  = CurrentTime;*/
   }
 
   return FALSE;
@@ -1612,6 +1580,11 @@ InitBpAnimSinMov (
   mBpAnimInfoSinMove.Duration   = Duration;
   mBpAnimInfoSinMove.StartValue = 0;
   mBpAnimInfoSinMove.EndValue   = 35;
+  //
+  // FIXME: This assumes that only relative changes of X are performed on
+  //        mBootPicker between animation initialisation and start.
+  //
+  mBootPicker.Hdr.Obj.OffsetX += 35;
 }
 
 BOOLEAN
@@ -1621,41 +1594,28 @@ InternalBootPickerAnimateSinMov (
   IN     UINT64                  CurrentTime
   )
 {
-  STATIC BOOLEAN First = TRUE;
-  STATIC BOOLEAN Minus = TRUE;
-  STATIC INT64 InitOffsetX = 0;
+  STATIC UINT32 PrevSine = 0;
 
-  INT64  OldOffsetX;
   UINT32 InterpolVal;
+  UINT32 DeltaSine;
 
   ASSERT (DrawContext != NULL);
 
-  OldOffsetX = mBootPicker.Hdr.Obj.OffsetX;
-  if (First) {
-    First       = FALSE;
-    InitOffsetX = OldOffsetX + 35;
-  }
-
   InterpolVal = GuiGetInterpolatedValue (&mBpAnimInfoSinMove, CurrentTime);
-  if (Minus) {
-    mBootPicker.Hdr.Obj.OffsetX = InitOffsetX - InterpolVal;
-  } else {
-    mBootPicker.Hdr.Obj.OffsetX = InitOffsetX + InterpolVal;
-  }
+  DeltaSine = InterpolVal - PrevSine;
+  mBootPicker.Hdr.Obj.OffsetX -= DeltaSine;
+  PrevSine = InterpolVal;
 
   GuiDrawScreen (
     DrawContext,
-    mBootPickerContainer.Obj.OffsetX + MIN (OldOffsetX, mBootPicker.Hdr.Obj.OffsetX),
+    mBootPickerContainer.Obj.OffsetX + mBootPicker.Hdr.Obj.OffsetX,
     mBootPickerContainer.Obj.OffsetY + mBootPicker.Hdr.Obj.OffsetY,
-    (UINT32)(mBootPicker.Hdr.Obj.Width + ABS (OldOffsetX - mBootPicker.Hdr.Obj.OffsetX)),
+    (UINT32)(mBootPicker.Hdr.Obj.Width + DeltaSine),
     mBootPicker.Hdr.Obj.Height
     );
 
   if (InterpolVal == mBpAnimInfoSinMove.EndValue) {
     return TRUE;
-    /*Minus = !Minus;
-    InitOffsetX = mBootPicker.Hdr.Obj.OffsetX;
-    mBpAnimInfoSinMove.StartTime = CurrentTime;*/
   }
 
   return FALSE;
@@ -1749,17 +1709,17 @@ BootPickerViewInitialize (
   //
 
   if (!GuiContext->DoneIntroAnimation) {
-    InitBpAnimSinMov (GuiInterpolTypeSmooth, 0, 25);
-    STATIC GUI_ANIMATION PickerAnim;
-    PickerAnim.Context = NULL;
-    PickerAnim.Animate = InternalBootPickerAnimateSinMov;
-    InsertHeadList (&DrawContext->Animations, &PickerAnim.Link);
-
     InitBpAnimOpacity (GuiInterpolTypeSmooth, 0, 25);
     STATIC GUI_ANIMATION PickerAnim2;
     PickerAnim2.Context = NULL;
     PickerAnim2.Animate = InternalBootPickerAnimateOpacity;
     InsertHeadList (&DrawContext->Animations, &PickerAnim2.Link);
+
+    InitBpAnimSinMov (GuiInterpolTypeSmooth, 0, 25);
+    STATIC GUI_ANIMATION PickerAnim;
+    PickerAnim.Context = NULL;
+    PickerAnim.Animate = InternalBootPickerAnimateSinMov;
+    InsertHeadList (&DrawContext->Animations, &PickerAnim.Link);
 
     GuiContext->DoneIntroAnimation = TRUE;
   }
