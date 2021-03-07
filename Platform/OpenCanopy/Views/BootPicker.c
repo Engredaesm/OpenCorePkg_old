@@ -160,16 +160,14 @@ InternalBootPickerViewDraw (
   ASSERT (DrawContext != NULL);
   ASSERT (Context != NULL);
 
-  ASSERT (BaseX + OffsetX >= 0);
-  ASSERT (BaseY + OffsetY >= 0);
-  ASSERT (BaseX + OffsetX <= MAX_UINT32);
-  ASSERT (BaseY + OffsetY <= MAX_UINT32);
+  ASSERT (BaseX == 0);
+  ASSERT (BaseY == 0);
 
   GuiDrawToBufferFill (
     &mBackgroundImage,
     DrawContext,
-    (UINT32) (BaseX + OffsetX),
-    (UINT32) (BaseY + OffsetY),
+    OffsetX,
+    OffsetY,
     Width,
     Height
     );
@@ -179,8 +177,8 @@ InternalBootPickerViewDraw (
       &DrawContext->GuiContext->Background,
       0xFF,
       DrawContext,
-      BaseX,
-      BaseY,
+      0,
+      0,
       mBackgroundImageOffsetX,
       mBackgroundImageOffsetY,
       OffsetX,
@@ -194,8 +192,8 @@ InternalBootPickerViewDraw (
     This,
     DrawContext,
     Context,
-    BaseX,
-    BaseY,
+    0,
+    0,
     OffsetX,
     OffsetY,
     Width,
@@ -217,6 +215,8 @@ InternalBootPickerViewKeyEvent (
   ASSERT (This != NULL);
   ASSERT (DrawContext != NULL);
 
+  ASSERT (BaseX == 0);
+  ASSERT (BaseY == 0);
   //
   // Consider moving between multiple panes with UP/DOWN and store the current
   // view within the object - for now, hardcoding this is enough.
@@ -226,8 +226,8 @@ InternalBootPickerViewKeyEvent (
                         &mBootPicker.Hdr.Obj,
                         DrawContext,
                         Context,
-                        BaseX + mBootPickerContainer.Obj.OffsetX + mBootPicker.Hdr.Obj.OffsetX,
-                        BaseY + mBootPickerContainer.Obj.OffsetY + mBootPicker.Hdr.Obj.OffsetY,
+                        mBootPickerContainer.Obj.OffsetX + mBootPicker.Hdr.Obj.OffsetX,
+                        mBootPickerContainer.Obj.OffsetY + mBootPicker.Hdr.Obj.OffsetY,
                         Key,
                         Modifier
                         );
@@ -272,30 +272,20 @@ InternalBootPickerSelectEntry (
 
 INT64
 InternelBootPickerScrollSelected (
-  IN UINT32  Scale
+  VOID
   )
 {
   CONST GUI_VOLUME_ENTRY *SelectedEntry;
   INT64                  EntryOffsetX;
 
-  ASSERT (mBootPicker.SelectedEntry != NULL);
+  if (mBootPicker.SelectedEntry == NULL) {
+    return 0;
+  }
   //
   // If the selected entry is outside of the view, scroll it accordingly.
-  // This function is called every time an entry is added or changed by the
-  // user. Due to this internal design, the selected entry can never be outside
-  // of the view by more than one entry's size.
   //
   SelectedEntry = mBootPicker.SelectedEntry;
   EntryOffsetX  = mBootPicker.Hdr.Obj.OffsetX + SelectedEntry->Hdr.Obj.OffsetX;
-  //
-  // If the selected element is off-screen, scroll the view such that it is at
-  // the very edge of the view. As the view's width bounds precisely a set of
-  // boot entries (i.e. there can never be a partial entry or extra padding),
-  // this is equivalent to scrolling one boot entry spot.
-  // This is done to achieve the correct offset during initialisation as the
-  // entries may be at "half-steps" due to centering.
-  //
-  ASSERT ((mBootPickerContainer.Obj.Width + BOOT_ENTRY_SPACE * Scale) % ((BOOT_ENTRY_WIDTH + BOOT_ENTRY_SPACE) * Scale) == 0);
 
   if (EntryOffsetX < 0) {
     return -EntryOffsetX;
@@ -348,12 +338,12 @@ InternalBootPickerScroll (
   // The container is constructed such that it is always fully visible.
   //
   ASSERT (This->Hdr.Obj.Height <= mBootPickerContainer.Obj.Height);
-  ASSERT (BaseY + This->Hdr.Obj.Height <= DrawContext->Screen->Height);
+  ASSERT (BaseY + This->Hdr.Obj.Height <= mBootPickerView.Height);
   
   GuiRequestDraw (
     0,
     (UINT32) BaseY,
-    DrawContext->Screen->Width,
+    mBootPickerView.Width,
     This->Hdr.Obj.Height
     );
 }
@@ -385,7 +375,7 @@ InternalBootPickerChangeEntry (
   PrevEntry = This->SelectedEntry;
   InternalBootPickerSelectEntry (This, DrawContext, NewEntry);
 
-  ScrollOffset = InternelBootPickerScrollSelected (DrawContext->Scale);
+  ScrollOffset = InternelBootPickerScrollSelected ();
   if (ScrollOffset == 0) {
     //
     // To redraw the entry *and* the selector, draw the entire height of the
@@ -894,8 +884,8 @@ InternalBootPickerSelectorPtrEvent (
     //
     ASSERT (BaseX >= 0);
     ASSERT (BaseY >= 0);
-    ASSERT (BaseX + This->Width <= DrawContext->Screen->Width);
-    ASSERT (BaseY + This->Height <= DrawContext->Screen->Height);
+    ASSERT (BaseX + This->Width <= mBootPickerView.Width);
+    ASSERT (BaseY + This->Height <= mBootPickerView.Height);
     GuiRequestDraw ((UINT32) BaseX, (UINT32) BaseY, This->Width, This->Height);
   }
 
@@ -1000,8 +990,8 @@ InternalBootPickerLeftScrollPtrEvent (
     //
     ASSERT (BaseX >= 0);
     ASSERT (BaseY >= 0);
-    ASSERT (BaseX + This->Width <= DrawContext->Screen->Width);
-    ASSERT (BaseY + This->Height <= DrawContext->Screen->Height);
+    ASSERT (BaseX + This->Width <= mBootPickerView.Width);
+    ASSERT (BaseY + This->Height <= mBootPickerView.Height);
     GuiRequestDraw ((UINT32) BaseX, (UINT32) BaseY, This->Width, This->Height);
   }
 
@@ -1104,8 +1094,8 @@ InternalBootPickerRightScrollPtrEvent (
     //
     ASSERT (BaseX >= 0);
     ASSERT (BaseY >= 0);
-    ASSERT (BaseX + This->Width <= DrawContext->Screen->Width);
-    ASSERT (BaseY + This->Height <= DrawContext->Screen->Height);
+    ASSERT (BaseX + This->Width <= mBootPickerView.Width);
+    ASSERT (BaseY + This->Height <= mBootPickerView.Height);
     GuiRequestDraw ((UINT32) BaseX, (UINT32) BaseY, This->Width, This->Height);
   }
 
@@ -1233,7 +1223,6 @@ BootPickerEntriesAdd (
   BOOLEAN                     UseDiskLabel;
   BOOLEAN                     UseGenericLabel;
   BOOLEAN                     Result;
-  INT64                       ScrollOffset;
 
   ASSERT (GuiContext != NULL);
   ASSERT (Entry != NULL);
@@ -1445,11 +1434,6 @@ BootPickerEntriesAdd (
   if (Default) {
     InternalBootPickerSelectEntry (&mBootPicker, NULL, VolumeEntry);
     GuiContext->BootEntry = Entry;
-  }
-
-  if (mBootPicker.SelectedEntry != NULL) {
-    ScrollOffset = InternelBootPickerScrollSelected (GuiContext->Scale);
-    mBootPicker.Hdr.Obj.OffsetX += ScrollOffset;
   }
 
   return EFI_SUCCESS;
@@ -1702,6 +1686,55 @@ BootPickerViewInitialize (
   */
 
   return EFI_SUCCESS;
+}
+
+VOID
+BootPickerViewLateInitialize (
+  VOID
+  )
+{
+  INT64                  ScrollOffset;
+  CONST LIST_ENTRY       *ListEntry;
+  CONST GUI_VOLUME_ENTRY *BootEntry;
+  INT64                  FirstPosOffset;
+
+  ASSERT (mBootPicker.SelectedEntry != NULL);
+
+  ScrollOffset = InternelBootPickerScrollSelected ();
+  //
+  // If ScrollOffset is non-0, the selected entry will be aligned left- or
+  // right-most. The view holds a discrete amount of entries, so cut-offs are
+  // impossible.
+  //
+  if (ScrollOffset == 0) {
+    ListEntry = mBootPicker.Hdr.Obj.Children.BackLink;
+    ASSERT (ListEntry == &mBootPickerSelector.Hdr.Link);
+
+    FirstPosOffset = 0;
+    //
+    // Last entry is always the selector.
+    //
+    ListEntry = ListEntry->BackLink;
+    //
+    // Find the first entry that is fully visible.
+    //
+    while (!IsNull (&mBootPicker.Hdr.Obj.Children, ListEntry)) {
+      BootEntry = BASE_CR (ListEntry, GUI_VOLUME_ENTRY, Hdr.Link);
+      if (mBootPicker.Hdr.Obj.OffsetX + BootEntry->Hdr.Obj.OffsetX < 0) {
+        //
+        // Move the first fully visible boot entry to the very left to prevent
+        // cut-off entries. This only applies when entries overflow.
+        //
+        ScrollOffset = -(INT64) FirstPosOffset;
+        break;
+      }
+
+      FirstPosOffset = mBootPicker.Hdr.Obj.OffsetX + BootEntry->Hdr.Obj.OffsetX;
+      ListEntry = ListEntry->BackLink;
+    }
+  }
+
+  mBootPicker.Hdr.Obj.OffsetX += ScrollOffset;
 }
 
 VOID
