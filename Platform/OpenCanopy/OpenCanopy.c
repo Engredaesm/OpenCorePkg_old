@@ -976,13 +976,17 @@ GuiDrawLoop (
   UINT64              LoopStartTsc;
   UINT64              LastTsc;
   UINT64              NewLastTsc;
+  BOOLEAN             ObjectHeld;
 
   CONST GUI_IMAGE     *CursorImage;
+  UINT64              FrameTime;
 
   ASSERT (DrawContext != NULL);
 
   mNumValidDrawReqs = 0;
+  FrameTime         = 0;
   HoldObject        = NULL;
+  ObjectHeld        = FALSE;
 
   //
   // Clear previous inputs.
@@ -1024,17 +1028,24 @@ GuiDrawLoop (
       //
       GuiPointerGetState (mPointerContext, &PointerState);
 
-      if (PointerState.PrimaryDown && HoldObject == NULL) {
-        HoldObject = GuiObjDelegatePtrEvent (
-                        DrawContext->Screen,
-                        DrawContext,
-                        DrawContext->GuiContext,
-                        GuiPointerPrimaryDown,
-                        0,
-                        0,
-                        PointerState.X,
-                        PointerState.Y
-                        );
+      if (PointerState.PrimaryDown) {
+        if (!ObjectHeld && HoldObject == NULL) {
+          HoldObject = GuiObjDelegatePtrEvent (
+                          DrawContext->Screen,
+                          DrawContext,
+                          DrawContext->GuiContext,
+                          GuiPointerPrimaryDown,
+                          0,
+                          0,
+                          PointerState.X,
+                          PointerState.Y
+                          );
+          
+        }
+
+        ObjectHeld = TRUE;
+      } else {
+        ObjectHeld = FALSE;
       }
 
       if (HoldObject != NULL) {
@@ -1096,8 +1107,6 @@ GuiDrawLoop (
         }
       }
     }
-
-    STATIC UINT64 FrameTime = 0;
     //
     // Process queued animations.
     //
