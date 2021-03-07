@@ -290,7 +290,7 @@ GuiDrawToBufferFill (
   ASSERT (Width > 0);
   ASSERT (Height > 0);
   //
-  // Screen cropping happens in GuiDrawScreen().
+  // Screen cropping happens in GuiRequestDrawCrop().
   //
   ASSERT (DrawContext->Screen->Width  >= PosX);
   ASSERT (DrawContext->Screen->Height >= PosY);
@@ -387,7 +387,7 @@ GuiDrawToBuffer (
   PosX = (UINT32) (BaseX + OffsetX);
   PosY = (UINT32) (BaseY + OffsetY);
   //
-  // Screen cropping happens in GuiDrawScreen().
+  // Screen cropping happens in GuiRequestDrawCrop().
   //
   ASSERT (DrawContext->Screen->Width  >= PosX);
   ASSERT (DrawContext->Screen->Height >= PosY);
@@ -559,7 +559,7 @@ GuiRequestDraw (
 }
 
 VOID
-GuiDrawScreen (
+GuiRequestDrawCrop (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                X,
   IN     INT64                Y,
@@ -574,52 +574,33 @@ GuiDrawScreen (
 
   ASSERT (DrawContext != NULL);
   ASSERT (DrawContext->Screen != NULL);
+
+  EffWidth  = Width;
+  EffHeight = Height;
   //
   // Only draw the onscreen parts.
   //
   if (X >= 0) {
     PosX = (UINT32)X;
   } else {
-    if (X + Width <= 0) {
-      return;
-    }
-
-    Width = (UINT32)(X + Width);
-    PosX  = 0;
+    EffWidth += X;
+    PosX      = 0;
   }
 
   if (Y >= 0) {
     PosY = (UINT32)Y;
   } else {
-    if (Y + Height <= 0) {
-      return;
-    }
-
-    Height = (UINT32)(Y + Height);
-    PosY   = 0;
+    EffHeight += Y;
+    PosY       = 0;
   }
 
-  EffWidth  = MIN (Width,  (INT64) DrawContext->Screen->Width  - PosX);
-  EffHeight = MIN (Height, (INT64) DrawContext->Screen->Height - PosY);
+  EffWidth  = MIN (EffWidth,  (INT64) DrawContext->Screen->Width  - PosX);
+  EffHeight = MIN (EffHeight, (INT64) DrawContext->Screen->Height - PosY);
 
   if (EffWidth <= 0 || EffHeight <= 0) {
     return;
   }
 
-  ASSERT (DrawContext->Screen->OffsetX == 0);
-  ASSERT (DrawContext->Screen->OffsetY == 0);
-  ASSERT (DrawContext->Screen->Draw != NULL);
-  DrawContext->Screen->Draw (
-                         DrawContext->Screen,
-                         DrawContext,
-                         DrawContext->GuiContext,
-                         0,
-                         0,
-                         PosX,
-                         PosY,
-                         (UINT32) EffWidth,
-                         (UINT32) EffHeight
-                         );
   GuiRequestDraw (PosX, PosY, (UINT32) EffWidth, (UINT32) EffHeight);
 }
 
@@ -634,7 +615,7 @@ GuiRedrawObject (
   ASSERT (This != NULL);
   ASSERT (DrawContext != NULL);
 
-  GuiDrawScreen (
+  GuiRequestDrawCrop (
     DrawContext,
     BaseX,
     BaseY,
@@ -644,7 +625,7 @@ GuiRedrawObject (
 }
 
 VOID
-GuiRedrawPointer (
+GuiOverlayPointer (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext
   )
 {
@@ -756,9 +737,21 @@ GuiFlushScreen (
 
   ASSERT (DrawContext != NULL);
   ASSERT (DrawContext->Screen != NULL);
-
-  if (mPointerContext != NULL) {
-    GuiRedrawPointer (DrawContext);
+  ASSERT (DrawContext->Screen->OffsetX == 0);
+  ASSERT (DrawContext->Screen->OffsetY == 0);
+  ASSERT (DrawContext->Screen->Draw != NULL);
+  for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
+    DrawContext->Screen->Draw (
+      DrawContext->Screen,
+      DrawContext,
+      DrawContext->GuiContext,
+      0,
+      0,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].Width,
+      mDrawRequests[Index].Height
+      );
   }
   //
   // Raise the TPL to not interrupt timing or flushing.
@@ -770,6 +763,10 @@ GuiFlushScreen (
   DeltaTsc = EndTsc - mStartTsc;
   if (DeltaTsc < mDeltaTscTarget) {
     EndTsc = InternalCpuDelayTsc (mDeltaTscTarget - DeltaTsc);
+  }
+
+  if (mPointerContext != NULL) {
+    GuiOverlayPointer (DrawContext);
   }
 
   for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
@@ -810,7 +807,7 @@ GuiRedrawAndFlushScreen (
 
   mStartTsc = AsmReadTsc ();
 
-  GuiRedrawObject (DrawContext->Screen, DrawContext, 0, 0);
+  GuiRequestDraw (0, 0, DrawContext->Screen->Width, DrawContext->Screen->Height);
   GuiFlushScreen (DrawContext);
 }
 
@@ -1036,7 +1033,7 @@ GuiDrawLoop (
       // Restore the rectangle previously covered by the cursor.
       // The new cursor is drawn right before flushing the screen.
       //
-      GuiDrawScreen (
+      GuiRequestDrawCrop (
         DrawContext,
         mCursorOldX,
         mCursorOldY,
