@@ -107,20 +107,21 @@ EFI_STATUS
 BootPickerViewInitialize (
   OUT GUI_DRAWING_CONTEXT      *DrawContext,
   IN  BOOT_PICKER_GUI_CONTEXT  *GuiContext,
-  IN  GUI_CURSOR_GET_IMAGE     GetCursorImage
+  IN  GUI_CURSOR_GET_IMAGE     GetCursorImage,
+  IN  UINT8                    NumBootEntries
   );
 
 VOID
 BootPickerViewLateInitialize (
-  VOID
+  IN UINT8  DefaultIndex
   );
 
 EFI_STATUS
-BootPickerEntriesAdd (
+BootPickerEntriesSet (
   IN OC_PICKER_CONTEXT              *Context,
   IN BOOT_PICKER_GUI_CONTEXT        *GuiContext,
   IN OC_BOOT_ENTRY                  *Entry,
-  IN BOOLEAN                        Default
+  IN UINT8                          EntryIndex
   );
 
 VOID
