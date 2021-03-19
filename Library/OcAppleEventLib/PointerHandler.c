@@ -38,31 +38,30 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <Library/BaseLib.h>
 
-// POINTER_POLL_FREQUENCY
-#define POINTER_POLL_FREQUENCY  EFI_TIMER_PERIOD_MILLISECONDS (2)
+//
+// CHANGE: Apple polls with a frequency of 2 ms, however this is infeasible on
+//         most machines. Poll with 10 ms, which matches the keyboard behaviour,
+//         and also is the minimum for QEMU.
+//
+#define POINTER_POLL_FREQUENCY  EFI_TIMER_PERIOD_MILLISECONDS (10)
 #define MAX_POINTER_POLL_FREQUENCY  EFI_TIMER_PERIOD_MILLISECONDS (80)
 
-// MAXIMUM_DOUBLE_CLICK_SPEED
-/// (EFI_TIMER_PERIOD_MILLISECONDS (748) / POINTER_POLL_FREQUENCY)
-#define MAXIMUM_DOUBLE_CLICK_SPEED  374
-
-// MAXIMUM_CLICK_DURATION
-/// (EFI_TIMER_PERIOD_MILLISECONDS (148) / POINTER_POLL_FREQUENCY)
-#define MAXIMUM_CLICK_DURATION  74
+STATIC UINT16 mMaximumDoubleClickSpeed = 75; // 374 for 2 ms
+STATIC UINT16 mMaximumClickDuration    = 15;  // 74 for 2 ms
 
 // MINIMAL_MOVEMENT
 #define MINIMAL_MOVEMENT  5
 
 // POINTER_BUTTON_INFORMATION
 typedef struct {
-  APPLE_EVENT_TYPE  EventType;          ///<
-  UINTN             NumberOfStrokes;    ///<
-  UINTN             Polls;              ///<
-  UINTN             PreviousEventType;  ///<
-  BOOLEAN           PreviousButton;     ///<
-  BOOLEAN           CurrentButton;      ///<
-  DIMENSION         PreviousPosition;   ///<
-  DIMENSION         Position;           ///<
+  APPLE_EVENT_TYPE  EventType;
+  UINTN             ButtonTicksHold;
+  UINTN             ButtonTicksSinceClick;
+  UINTN             PreviousClickEventType;
+  BOOLEAN           PreviousButton;
+  BOOLEAN           CurrentButton;
+  DIMENSION         MouseDownPosition;
+  DIMENSION         ClickPosition;
 } POINTER_BUTTON_INFORMATION;
 
 // SIMPLE_POINTER_INSTANCE
@@ -572,8 +571,8 @@ InternalHandleButtonInteraction (
   if (!EFI_ERROR (PointerStatus)) {
     if (!Pointer->PreviousButton) {
       if (Pointer->CurrentButton) {
-        Pointer->NumberOfStrokes  = 0;
-        Pointer->PreviousPosition = mCursorPosition;
+        Pointer->ButtonTicksHold   = 0;
+        Pointer->MouseDownPosition = mCursorPosition;
 
         Information = InternalCreatePointerEventQueueInformation (
                         (Pointer->EventType | APPLE_EVENT_TYPE_MOUSE_DOWN),
@@ -594,18 +593,18 @@ InternalHandleButtonInteraction (
         EventAddEventToQueue (Information);
       }
 
-      if (Pointer->NumberOfStrokes <= MAXIMUM_CLICK_DURATION) {
-        HorizontalMovement = ABS(Pointer->PreviousPosition.Horizontal - mCursorPosition.Horizontal);
-        VerticalMovement   = ABS(Pointer->PreviousPosition.Vertical - mCursorPosition.Vertical);
+      if (Pointer->ButtonTicksHold <= mMaximumClickDuration) {
+        HorizontalMovement = ABS(Pointer->MouseDownPosition.Horizontal - mCursorPosition.Horizontal);
+        VerticalMovement   = ABS(Pointer->MouseDownPosition.Vertical - mCursorPosition.Vertical);
 
         if ((HorizontalMovement <= MINIMAL_MOVEMENT)
          && (VerticalMovement <= MINIMAL_MOVEMENT)) {
           EventType = APPLE_EVENT_TYPE_MOUSE_CLICK;
 
-          if ((Pointer->PreviousEventType == APPLE_EVENT_TYPE_MOUSE_CLICK)
-           && (Pointer->Polls <= MAXIMUM_DOUBLE_CLICK_SPEED)) {
-            HorizontalMovement = ABS(Pointer->Position.Horizontal - mCursorPosition.Horizontal);
-            VerticalMovement   = ABS(Pointer->Position.Vertical - mCursorPosition.Vertical);
+          if ((Pointer->PreviousClickEventType == APPLE_EVENT_TYPE_MOUSE_CLICK)
+           && (Pointer->ButtonTicksSinceClick <= mMaximumDoubleClickSpeed)) {
+            HorizontalMovement = ABS(Pointer->ClickPosition.Horizontal - mCursorPosition.Horizontal);
+            VerticalMovement   = ABS(Pointer->ClickPosition.Vertical - mCursorPosition.Vertical);
 
             if ((HorizontalMovement <= MINIMAL_MOVEMENT)
              && (VerticalMovement <= MINIMAL_MOVEMENT)) {
@@ -622,15 +621,15 @@ InternalHandleButtonInteraction (
             EventAddEventToQueue (Information);
           }
 
-          if (Pointer->PreviousEventType == APPLE_EVENT_TYPE_MOUSE_DOUBLE_CLICK) {
-            EventType = ((Pointer->Polls <= MAXIMUM_DOUBLE_CLICK_SPEED)
+          if (Pointer->PreviousClickEventType == APPLE_EVENT_TYPE_MOUSE_DOUBLE_CLICK) {
+            EventType = ((Pointer->ButtonTicksSinceClick <= mMaximumDoubleClickSpeed)
                             ? APPLE_EVENT_TYPE_MOUSE_DOUBLE_CLICK
                             : APPLE_EVENT_TYPE_MOUSE_CLICK);
           }
 
-          Pointer->PreviousEventType = EventType;
-          Pointer->Position          = mCursorPosition;
-          Pointer->Polls             = 0;
+          Pointer->PreviousClickEventType = EventType;
+          Pointer->ClickPosition          = mCursorPosition;
+          Pointer->ButtonTicksSinceClick  = 0;
         }
       }
     }
@@ -639,10 +638,10 @@ InternalHandleButtonInteraction (
   }
 
   if (Pointer->PreviousButton && Pointer->CurrentButton) {
-    ++Pointer->NumberOfStrokes;
+    ++Pointer->ButtonTicksHold;
   }
 
-  ++Pointer->Polls;
+  ++Pointer->ButtonTicksSinceClick;
 }
 
 // InternalSimplePointerPollNotifyFunction
@@ -672,6 +671,8 @@ InternalSimplePointerPollNotifyFunction (
   UINT64                      EndTime;
   INT64                       MaxRawPointerX;
   INT64                       MaxRawPointerY;
+  UINT64                      ClickTemp;
+  UINT64                      DoubleClickTemp;
 
   StartTime = GetPerformanceCounter ();
 
@@ -775,7 +776,7 @@ InternalSimplePointerPollNotifyFunction (
 
         mLeftButtonInfo.PreviousButton  = mLeftButtonInfo.CurrentButton;
         mLeftButtonInfo.CurrentButton   = State.LeftButton;
-        mRightButtonInfo.PreviousButton = mLeftButtonInfo.CurrentButton;
+        mRightButtonInfo.PreviousButton = mRightButtonInfo.CurrentButton;
         mRightButtonInfo.CurrentButton  = State.RightButton;
         CommonStatus                    = Status;
       }
@@ -822,10 +823,28 @@ InternalSimplePointerPollNotifyFunction (
     EndTime = GetTimeInNanoSecond (EndTime - StartTime);
     // Maximum time allowed in this function is half the interval plus some margin (0.55 * 100ns)
     if (EndTime > mSimplePointerPollTime * 55ULL) {
+      ClickTemp = MultU64x32 (mSimplePointerPollTime, mMaximumClickDuration);
+      DoubleClickTemp = MultU64x32 (
+        mSimplePointerPollTime,
+        mMaximumDoubleClickSpeed
+        );
+
       mSimplePointerPollTime = DivU64x32 (EndTime, 50);
       if (mSimplePointerPollTime > MAX_POINTER_POLL_FREQUENCY) {
         mSimplePointerPollTime = MAX_POINTER_POLL_FREQUENCY;
       }
+
+      mMaximumClickDuration = (UINT16) DivU64x64Remainder (
+        ClickTemp,
+        mSimplePointerPollTime,
+        NULL
+        );
+      mMaximumDoubleClickSpeed = (UINT16) DivU64x64Remainder (
+        DoubleClickTemp,
+        mSimplePointerPollTime,
+        NULL
+        );
+
       gBS->SetTimer (mSimplePointerPollEvent, TimerPeriodic, mSimplePointerPollTime);
     }
   }
