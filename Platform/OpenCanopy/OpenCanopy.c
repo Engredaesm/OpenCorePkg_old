@@ -58,8 +58,10 @@ STATIC UINT64                        mStartTsc          = 0;
 STATIC UINT8                         mNumValidDrawReqs  = 0;
 STATIC GUI_DRAW_REQUEST              mDrawRequests[4]   = { { 0 } };
 
-STATIC INT64                         mPointerOldBaseX = 0;
-STATIC INT64                         mPointerOldBaseY = 0;
+STATIC UINT32                        mPointerOldDrawBaseX  = 0;
+STATIC UINT32                        mPointerOldDrawBaseY  = 0;
+STATIC UINT32                        mPointerOldDrawWidth  = 0;
+STATIC UINT32                        mPointerOldDrawHeight = 0;
 
 #define PIXEL_TO_UINT32(Pixel)  \
   ((UINT32) SIGNATURE_32 ((Pixel)->Blue, (Pixel)->Green, (Pixel)->Red, (Pixel)->Reserved))
@@ -670,8 +672,10 @@ GuiOverlayPointer (
     MaxHeight
     );
 
-  mPointerOldBaseX = DrawBaseX;
-  mPointerOldBaseY = DrawBaseY;
+  mPointerOldDrawBaseX  = DrawBaseX;
+  mPointerOldDrawBaseY  = DrawBaseY;
+  mPointerOldDrawWidth  = MaxWidth;
+  mPointerOldDrawHeight = MaxHeight;
 }
 
 /**
@@ -976,8 +980,8 @@ GuiDrawLoop (
   EFI_STATUS           Status;
   BOOLEAN              Result;
 
-  INTN                 InputKey;
-  BOOLEAN              Modifier;
+  OC_PICKER_KEY_INFO   PickerKeyInfo;
+  BOOLEAN              InTypingContext;
   GUI_PTR_EVENT        PointerEvent;
   GUI_OBJ              *TempObject;
   GUI_OBJ              *HoldObject;
@@ -989,11 +993,11 @@ GuiDrawLoop (
   UINT64               LastTsc;
   UINT64               NewLastTsc;
 
-  CONST GUI_IMAGE      *CursorImage;
   UINT64               FrameTime;
 
   ASSERT (DrawContext != NULL);
 
+  InTypingContext   = FALSE;
   mNumValidDrawReqs = 0;
   FrameTime         = 0;
   HoldObject        = NULL;
@@ -1016,21 +1020,14 @@ GuiDrawLoop (
   do {
     if (mPointerContext != NULL) {
       //
-      // TODO: Put cursor dimensions in some context?
-      //
-      ASSERT (DrawContext->GetCursorImage != NULL);
-      CursorImage = DrawContext->GetCursorImage (DrawContext->GuiContext);
-      ASSERT (CursorImage != NULL);
-      //
       // Restore the rectangle previously covered by the cursor.
       // The new cursor is drawn right before flushing the screen.
       //
-      GuiRequestDrawCrop (
-        DrawContext,
-        mPointerOldBaseX,
-        mPointerOldBaseY,
-        CursorImage->Width,
-        CursorImage->Height
+      GuiRequestDraw (
+        mPointerOldDrawBaseX,
+        mPointerOldDrawBaseY,
+        mPointerOldDrawWidth,
+        mPointerOldDrawHeight
         );
       //
       // Process pointer events.
@@ -1105,7 +1102,7 @@ GuiDrawLoop (
       //
       // Process key events. Only allow one key at a time for now.
       //
-      Status = GuiKeyRead (mKeyContext, &InputKey, &Modifier);
+      Status = GuiKeyRead (mKeyContext, &PickerKeyInfo, InTypingContext);
       if (!EFI_ERROR (Status)) {
         ASSERT (DrawContext->KeyEvent != NULL);
         DrawContext->KeyEvent (
@@ -1114,13 +1111,14 @@ GuiDrawLoop (
           DrawContext->GuiContext,
           0,
           0,
-          InputKey,
-          Modifier
+          PickerKeyInfo.OcKeyCode,
+          PickerKeyInfo.OcModifiers
           );
         //
         // If detected key press then disable menu timeout
         //
-        if (TimeOutSeconds > 0) {
+        if (PickerKeyInfo.OcKeyCode != OC_INPUT_NO_ACTION
+          && TimeOutSeconds > 0) {
           //
           // Voice only unrelated key press.
           //
