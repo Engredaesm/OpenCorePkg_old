@@ -113,7 +113,7 @@ OcLoadPickerHotKeys (
 //
 // Initialise picker keyboard handling.
 //
-VOID
+EFI_STATUS
 OcInitHotKeys (
   IN OUT OC_PICKER_CONTEXT  *Context
   )
@@ -129,6 +129,9 @@ OcInitHotKeys (
   Context->KbDebug = NULL;
 
   KeyMap = OcGetProtocol (&gAppleKeyMapAggregatorProtocolGuid, DEBUG_ERROR, "OcInitHotKeys", "AppleKeyMapAggregator");
+  if (KeyMap == NULL) {
+    return EFI_NOT_FOUND;
+  }
 
   //
   // Non-repeating keys e.g. ESC and SPACE.
@@ -144,6 +147,7 @@ OcInitHotKeys (
   
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "OCHK: Init non-repeating context - %r\n", Status));
+    return Status;
   }
 
   //
@@ -153,12 +157,34 @@ OcInitHotKeys (
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "OCHK: Register typing handler - %r\n", Status));
+    OcFreeKeyRepeatContext (&Context->DoNotRepeatContext);
+    return Status;
   }
 
   //
   // NB Raw AKMA is also still used for HotKeys, since we really do need
   // three different types of keys response for fluent UI behaviour.
   //
+
+  return EFI_SUCCESS;
+}
+
+//
+// Free picker keyboard handling resources.
+//
+VOID
+OcFreeHotKeys (
+  IN     OC_PICKER_CONTEXT  *Context
+  )
+{
+  if (Context == NULL) {
+    return;
+  }
+
+  DEBUG ((DEBUG_INFO, "OCHK: FreeHotKeys\n"));
+
+  OcUnregisterTypingHandler (&Context->TypingContext);
+  OcFreeKeyRepeatContext (&Context->DoNotRepeatContext);
 }
 
 VOID
@@ -198,7 +224,10 @@ OcGetPickerKeyInfo (
   UINT32                             CsrActiveConfig;
   UINTN                              CsrActiveConfigSize;
 
-  ASSERT (PickerKeyInfo != NULL);
+  ASSERT (KeyMap                      != NULL);
+  ASSERT (Context->TypingContext      != NULL);
+  ASSERT (Context->DoNotRepeatContext != NULL);
+  ASSERT (PickerKeyInfo               != NULL);
 
   PickerKeyInfo->OcKeyCode        = OC_INPUT_NO_ACTION;
   PickerKeyInfo->OcModifiers      = OC_MODIFIERS_NONE;
@@ -375,22 +404,10 @@ OcGetPickerKeyInfo (
   }
 
   //
-  // Handle typing
+  // Handle typing chars.
   //
-  if (FilterForTyping) {
-    if (UnicodeChar >= 32 && UnicodeChar < 128) {
-      PickerKeyInfo->TypingChar = (CHAR8)UnicodeChar;
-    }
-
-    if (OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyEscape)) {
-      PickerKeyInfo->OcKeyCode = OC_INPUT_TYPING_CLEAR_ALL;
-      return;
-    }
-
-    if (OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyBackSpace)) {
-      PickerKeyInfo->OcKeyCode = OC_INPUT_TYPING_BACKSPACE;
-      return;
-    }
+  if (FilterForTyping && UnicodeChar >= 32 && UnicodeChar < 128) {
+    PickerKeyInfo->TypingChar = (CHAR8)UnicodeChar;
   }
 
   //
@@ -439,6 +456,23 @@ OcGetPickerKeyInfo (
 
       if (Keys[0] == AppleHidUsbKbUsageKeyRightArrow) {
         PickerKeyInfo->OcKeyCode = OC_INPUT_TYPING_RIGHT;
+        return;
+      }
+
+      if (Keys[0] == AppleHidUsbKbUsageKeyEscape) {
+        PickerKeyInfo->OcKeyCode = OC_INPUT_TYPING_CLEAR_ALL;
+        return;
+      }
+
+      if (Keys[0] ==AppleHidUsbKbUsageKeyBackSpace) {
+        PickerKeyInfo->OcKeyCode = OC_INPUT_TYPING_BACKSPACE;
+        return;
+      }
+
+      if (Keys[0] == AppleHidUsbKbUsageKeyEnter
+        || Keys[0] == AppleHidUsbKbUsageKeyReturn
+        || Keys[0] == AppleHidUsbKbUsageKeyPadEnter) {
+        PickerKeyInfo->OcKeyCode = OC_INPUT_TYPING_CONFIRM;
         return;
       }
     } else {
