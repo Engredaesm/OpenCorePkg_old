@@ -619,8 +619,6 @@ OcShowSimplePasswordRequest (
   IN OC_PRIVILEGE_LEVEL  Level
   )
 {
-  OC_PRIVILEGE_CONTEXT *Privilege;
-
   BOOLEAN              Result;
 
   UINT8                Password[OC_PASSWORD_MAX_LEN];
@@ -628,12 +626,7 @@ OcShowSimplePasswordRequest (
 
   UINT8                Index;
   OC_PICKER_KEY_INFO   PickerKeyInfo;
-
-  Privilege = Context->PrivilegeContext;
-
-  if (Privilege == NULL || Privilege->CurrentLevel >= Level) {
-    return EFI_SUCCESS;
-  }
+  UINT8                SpaceIndex;
 
   OcConsoleControlSetMode (EfiConsoleControlScreenText);
   gST->ConOut->EnableCursor (gST->ConOut, FALSE);
@@ -680,7 +673,6 @@ OcShowSimplePasswordRequest (
       }
 
       if (PickerKeyInfo.UnicodeChar == CHAR_CARRIAGE_RETURN) {
-        gST->ConOut->ClearScreen (gST->ConOut);
         //
         // RETURN finalizes the input.
         //
@@ -739,20 +731,53 @@ OcShowSimplePasswordRequest (
       OcPlayAudioFile (Context, AppleVoiceOverAudioFileBeep, TRUE);
       ++PwIndex;
     }
+    //
+    // Output password processing status.
+    //
+    gST->ConOut->SetCursorPosition (
+      gST->ConOut,
+      0,
+      gST->ConOut->Mode->CursorRow
+      );
+    gST->ConOut->OutputString (gST->ConOut, OC_MENU_PASSWORD_PROCESSING);
+    //
+    // Clear remaining password prompt status.
+    //
+    for (
+      SpaceIndex = L_STR_LEN (OC_MENU_PASSWORD_PROCESSING);
+      SpaceIndex < L_STR_LEN (OC_MENU_PASSWORD_REQUEST) + PwIndex;
+      ++SpaceIndex
+      ) {
+      gST->ConOut->OutputString (gST->ConOut, L" ");
+    }
 
     Result = OcVerifyPasswordSha512 (
                Password,
                PwIndex,
-               Privilege->Salt,
-               Privilege->SaltSize,
-               Privilege->Hash
+               Context->PrivilegeContext->Salt,
+               Context->PrivilegeContext->SaltSize,
+               Context->PrivilegeContext->Hash
                );
 
     SecureZeroMem (Password, PwIndex);
+    //
+    // Clear password processing status.
+    //
+    gST->ConOut->SetCursorPosition (
+      gST->ConOut,
+      0,
+      gST->ConOut->Mode->CursorRow
+      );
+    for (SpaceIndex = 0; SpaceIndex < L_STR_LEN (OC_MENU_PASSWORD_PROCESSING); ++SpaceIndex) {
+      gST->ConOut->OutputString (gST->ConOut, L" ");
+    }
+    gST->ConOut->SetCursorPosition (
+      gST->ConOut,
+      0,
+      gST->ConOut->Mode->CursorRow
+      );
 
     if (Result) {
-      gST->ConOut->ClearScreen (gST->ConOut);
-      Privilege->CurrentLevel = Level;
       OcPlayAudioFile (Context, OcVoiceOverAudioFilePasswordAccepted, TRUE);
       return EFI_SUCCESS;
       break;
@@ -761,9 +786,7 @@ OcShowSimplePasswordRequest (
     }
   }
 
-  gST->ConOut->ClearScreen (gST->ConOut);
-  gST->ConOut->OutputString (gST->ConOut, OC_MENU_PASSWORD_RETRY_LIMIT);
-  gST->ConOut->OutputString (gST->ConOut, L"\r\n");
+  gST->ConOut->OutputString (gST->ConOut, OC_MENU_PASSWORD_RETRY_LIMIT L"\r\n");
   OcPlayAudioFile (Context, OcVoiceOverAudioFilePasswordRetryLimit, TRUE);
   DEBUG ((DEBUG_WARN, "OCB: User failed to verify password %d times running\n", OC_PASSWORD_MAX_RETRIES));
 
