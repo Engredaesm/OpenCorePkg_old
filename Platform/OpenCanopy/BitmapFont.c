@@ -490,7 +490,8 @@ BmfGetTextInfo (
   IN CONST BMF_CONTEXT  *Context,
   IN CONST CHAR16       *String,
   IN UINTN              StringLen,
-  IN UINTN              MaxWidth
+  IN UINT8              PosX,
+  IN UINT8              PosY
   )
 {
   BOOLEAN                Result;
@@ -509,6 +510,11 @@ BmfGetTextInfo (
   ASSERT (String  != NULL);
 
   if (StringLen == 0) {
+    return NULL;
+  }
+
+  if (PosY < Context->OffsetY) {
+    DEBUG ((DEBUG_WARN, "BMF: Font has invalid minimum y offset.\n"));
     return NULL;
   }
 
@@ -532,7 +538,7 @@ BmfGetTextInfo (
   InfoPairs = (CONST BMF_KERNING_PAIR **)&TextInfo->Chars[StringLen];
 
   TextInfo->Chars[0] = Char;
-  Width = Char->xadvance;
+  Width = PosX + Char->xadvance;
 
   for (Index = 1; Index < StringLen; ++Index) {
     ASSERT (String[Index] != 0);
@@ -557,29 +563,8 @@ BmfGetTextInfo (
       return NULL;
     }
 
-    /*if (Width > MaxWidth) {
-      break;
-    }*/
-
     TextInfo->Chars[Index] = Char;
     InfoPairs[Index - 1]   = Pair;
-  }
-
-  if (Index != StringLen) {
-    CONST BMF_KERNING_PAIR *PeriodPair;
-
-    Char = BmfGetChar (Context, '.');
-    if (Char == NULL) {
-      FreePool (TextInfo);
-      return NULL;
-    }
-
-    CurWidth = 2 * (INT32)Char->xadvance + (INT32)Char->xoffset + (INT32)Char->width;
-
-    PeriodPair = BmfGetKerningPair (Context, '.', '.');
-    if (PeriodPair != NULL) {
-      CurWidth += 2 * (INT32)PeriodPair->amount;
-    }
   }
 
   Width += ((INT32)TextInfo->Chars[Index - 1]->xoffset + (INT32)TextInfo->Chars[Index - 1]->width - (INT32)TextInfo->Chars[Index - 1]->xadvance);
@@ -594,7 +579,7 @@ BmfGetTextInfo (
 
   TextInfo->Width   = (UINT16)Width;
   TextInfo->Height  = Context->Height;
-  TextInfo->OffsetY = Context->OffsetY;
+  TextInfo->OffsetY = PosY;
   return TextInfo;
 }
 
@@ -655,7 +640,13 @@ GuiGetLabel (
   ASSERT (Context    != NULL);
   ASSERT (String     != NULL);
 
-  TextInfo = BmfGetTextInfo (&Context->BmfContext, String, StringLen, 0);
+  TextInfo = BmfGetTextInfo (
+    &Context->BmfContext,
+    String,
+    StringLen,
+    2 * Context->Scale,
+    2 * Context->Scale
+    );
   if (TextInfo == NULL) {
     DEBUG ((DEBUG_WARN, "BMF: GetTextInfo failed\n"));
     return FALSE;
@@ -669,15 +660,10 @@ GuiGetLabel (
   }
 
   InfoPairs   = (CONST BMF_KERNING_PAIR **)&TextInfo->Chars[StringLen];
-  TargetCharX = 0;
+  TargetCharX = 2 * Context->Scale;
 
-  if (TextInfo->Chars[0]->xoffset >= 0) {
-    InitialCharX       = 0;
-    InitialWidthOffset = 0;
-  } else {
-    InitialCharX       = -TextInfo->Chars[0]->xoffset;
-    InitialWidthOffset = TextInfo->Chars[0]->xoffset;
-  }
+  InitialCharX       = -TextInfo->Chars[0]->xoffset;
+  InitialWidthOffset = TextInfo->Chars[0]->xoffset;
 
   for (Index = 0; Index < StringLen; ++Index) {
     ASSERT (TextInfo->Chars[Index]->yoffset + TextInfo->OffsetY >= 0);
@@ -732,7 +718,8 @@ GuiFontConstruct (
   IN  VOID              *FontImage,
   IN  UINTN             FontImageSize,
   IN  VOID              *FileBuffer,
-  IN  UINT32            FileSize
+  IN  UINT32            FileSize,
+  IN  UINT8             Scale
   )
 {
   EFI_STATUS    Status;
@@ -765,6 +752,8 @@ GuiFontConstruct (
     GuiFontDestruct (Context);
     return FALSE;
   }
+
+  Context->Scale = Scale;
 
   // TODO: check file size
   return TRUE;
