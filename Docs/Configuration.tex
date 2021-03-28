@@ -1230,10 +1230,7 @@ should be met before starting:
   It is not necessary unless the system cannot be booted at all or
   \texttt{No slide values are usable! Use custom slide!} message can be seen in the log.
 \item \texttt{CFG Lock} (MSR \texttt{0xE2} write protection) disabled in
-  firmware settings if present. Consider
-\href{https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt}{patching it}
-  if no option is available (for advanced users only). See
-\hyperref[kernelpropsquirks]{ControlMsrE2}
+  firmware settings if present. See \hyperref[kernelpropsquirks]{ControlMsrE2}
   notes for more details.
 \item \texttt{CSM} (Compatibility Support Module) disabled in firmware settings
   if present. On NVIDIA 6xx/AMD 2xx or older, GOP ROM may have to be flashed first. Use
@@ -2375,13 +2372,14 @@ blocking.
   MSR modification in AppleIntelCPUPowerManagement.kext, commonly causing early
   kernel panic, when it is locked from writing.
 
-  Some types of firmware lock the \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR register and the bundled
-  \texttt{ControlMsrE2} tool can be used to check its state and enable it on selected platforms with
-  that option hidden. Note that some types of firmware only have this register locked on some cores.
+  Some types of firmware lock the \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR
+  register and the bundled \texttt{ControlMsrE2} tool can be used to check its
+  state. Note that some types of firmware only have this register locked on some
+  cores. As modern firmware provide a \texttt{CFG Lock} setting that allows
+  configuring the \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR register lock, this
+  option should be avoided whenever possible.
 
-  As modern firmware provide a \texttt{CFG Lock} setting that allows configuring the
-  \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR register lock, this option should be avoided
-  whenever possible. On APTIO firmware that do not provide a \texttt{CFG Lock}
+  On APTIO firmware that do not provide a \texttt{CFG Lock}
   setting in the GUI, it is possible to access the option directly:
 
   \begin{enumerate}
@@ -2405,6 +2403,15 @@ blocking.
 
   \textbf{Warning}: Variable offsets are unique not only to each motherboard but even to its firmware
   version. Never ever try to use an offset without checking.
+
+  On selected platforms, the \texttt{ControlMsrE2} tool can also change such
+  hidden options. Pass desired argument: \texttt{lock}, \texttt{unlock} for
+  \texttt{CFG Lock}. Or pass \texttt{interactive} to find and modify other
+  hidden options.
+
+  As a last resort, consider
+  \href{https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt}{patching the BIOS}
+  (for advanced users only).
 
 \item
   \texttt{AppleXcpmCfgLock}\\
@@ -3336,11 +3343,17 @@ the default boot entry choice will remain changed until the next manual reconfig
   \emph{Note 1}: The \texttt{KeySupport}, \texttt{OpenUsbKbDxe}, or similar drivers are required for key
   handling. However, not all of the key handling functions can be implemented on several types of firmware.
 
-  \emph{Note 2}: In addition to \texttt{OPT}, OpenCore supports using the \texttt{Escape} key to display
-  the OpenCore picker when \texttt{ShowPicker} is disabled. This key exists for the \texttt{Apple} picker
-  mode as well as for firmware that fail to report held \texttt{OPT} keys on PS/2 keyboards, requiring
-  multiple presses of the \texttt{Escape} key to access the OpenCore picker.
-
+  \emph{Note 2}: In addition to \texttt{OPT}, OpenCore supports using both the \texttt{Escape}
+  and \texttt{Zero} keys to enter the OpenCore picker when \texttt{ShowPicker} is disabled.
+  \texttt{Escape} exists to support co-existence with the Apple picker (including OpenCore \texttt{Apple}
+  picker mode) and to support firmware that fails to report held \texttt{OPT} key, as on some PS/2 keyboards.
+  In addition, \texttt{Zero} is provided to support systems on which \texttt{Escape} is already assigned to
+  some other pre-boot firmware feature. In systems which do not require \texttt{KeySupport}, pressing and
+  holding one of these keys from after power on until the picker appears should always be successful. The
+  same should apply when using \texttt{KeySupport} mode if it is correctly configured for the system, i.e.
+  with a long enough \texttt{KeyForgetThreshold}. If pressing and holding the key is not successful to reliably
+  enter the picker, multiple repeated keypresses may be tried instead.
+ 
   \emph{Note 3}: On Macs with problematic GOP, it may be difficult to access the Apple picker.
   The \texttt{BootKicker} utility can be blessed to workaround this problem even without loading
   OpenCore. On some Macs however, the \texttt{BootKicker} utility cannot be run from OpenCore.
@@ -3630,9 +3643,15 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Allow \texttt{CTRL+Enter} and \texttt{CTRL+Index} handling
-  to set the default boot option in the OpenCore picker; may be used in combination
+  to set the default boot option in the OpenCore picker.
+  
+  \emph{Note 1}: May be used in combination
   with \texttt{Shift+Enter} or \texttt{Shift+Index} when \texttt{PollAppleHotKeys} is
   enabled.
+
+  \emph{Note 2}: In order to support systems with unresponsive modifiers during preboot
+  (which includes \texttt{V1} and \texttt{V2} \texttt{KeySupport} mode on some firmware)
+  OpenCore also allows holding the \texttt{=/+} key in order to trigger `set default' mode.
 \item
   \texttt{ApECID}\\
   \textbf{Type}: \texttt{plist\ integer}, 64 bit\\
@@ -5805,7 +5824,8 @@ Some of the known tools are listed below (builtin tools are marked with \textbf{
 \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{RtcRw}}\textbf{*}
 & Utility to read and write RTC (CMOS) memory. \\
 \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{ControlMsrE2}}\textbf{*}
-& Check \texttt{CFG Lock} (MSR \texttt{0xE2} write protection) consistency across all cores.
+& Check \texttt{CFG Lock} (MSR \texttt{0xE2} write protection) consistency
+across all cores and change such hidden options on selected platforms.
 \end{tabular}
 
 \subsection{OpenCanopy}\label{ueficanopy}
@@ -6266,30 +6286,42 @@ functioning. Feature highlights:
   \texttt{KeyForgetThreshold}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{0}\\
-  \textbf{Description}: Remove key unless it was submitted during this timeout in 10 ms units.
+  \textbf{Description}: Treat duplicate key presses as held keys if they arrive
+  during this timeout, in 10 ms units. Only applies to systems using \texttt{KeySupport}.
 
   \texttt{AppleKeyMapAggregator} protocol is supposed to contain a fixed length buffer
-  of currently pressed keys. However, the majority of the drivers only report key
-  presses as interrupts and pressing and holding the key on the keyboard results in
-  subsequent submissions of this key with some defined time interval. As a result
-  we use a timeout to remove once pressed keys from the buffer once the timeout
-  expires and no new submission of this key happened.
+  of currently pressed keys. However, the majority of the drivers which require
+  \texttt{KeySupport} report key presses as interrupts, with automatically generated
+  key repeat behaviour with some defined initial and subsequent delay. As a result,
+  to emulate the raw key behaviour required by several Apple boot systems, we use a
+  timeout to merge multiple repeated keys which are submitted within a small timeout
+  window.
 
   This option allows setting this timeout based on the platform. The recommended
-  value for the majority of platforms is \texttt{5} (\texttt{50} milliseconds).
-  For reference, holding one key on VMware will repeat it roughly every \texttt{20}
-  milliseconds and the same value for APTIO V is \texttt{30-40} milliseconds. Thus,
-  it is possible to set a slightly lower value on faster platforms
-  and a slightly higher value on slower platforms for more responsive input.
+  value for the majority of platforms is from \texttt{5} (\texttt{50} milliseconds)
+  to \texttt{7} (\texttt{70} milliseconds), although values up to \texttt{9}
+  (\texttt{90} milliseconds) have been observed to be required on some PS/2 systems.
+  For reference, holding a key on VMware will repeat roughly every \texttt{20}
+  milliseconds and the equivalent value for APTIO V is \texttt{30-40} milliseconds.
+  \texttt{KeyForgetThreshold} should be configured to be longer than this. Thus,
+  it is possible to configure a lower \texttt{KeyForgetThreshold} value on platforms
+  with a faster native driver key repeat rate, for more responsive input, and it is
+  required to set a higher value on slower platforms.
 
   Pressing keys one after the other results in delays of at least \texttt{60} and
-  \texttt{100} milliseconds for the same platforms.
+  \texttt{100} milliseconds for the same platforms. Ideally, \texttt{KeyForgetThreshold}
+  should remain lower than this value, to avoid merging real key presses.
 
-  \emph{Note}: Some platforms may require different values, which may be higher or lower.
-  For example, when detecting key misses in OpenCanopy, try increasing this value
-  (e.g. to \texttt{10}), and when detecting key stall, try decreasing this value.
-  Since every platform is different, it may be prudent to check every value
-  from \texttt{1} to \texttt{25} (\texttt{10} to \texttt{250} milliseconds).
+  \emph{Note}: If you wish to fine tune this value, a good heuristic is to use
+  the `set default' indicator within either OpenCanopy or the builtin picker. When
+  \texttt{KeyForgetThreshold} is configured correctly, this indicator should
+  flicker once, when first pressing and holding the \texttt{CTRL} or \texttt{=/+} key, and then
+  after a further very brief interval should go on and stay on. (The initial flicker
+  is an unavoidable artefact of using \texttt{KeySupport} to emulate raw keyboard
+  data.) If \texttt{KeyForgetThreshold} is configured too low for the system, then
+  the `set default' indicator will continue to flicker while \texttt{CTRL} or \texttt{=/+} is held. Configure
+  the lowest value which causes this indicator to go on and stay on after the first
+  initial flicker.
 
 \item
   \texttt{KeySupport}\\
