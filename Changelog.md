@@ -53,6 +53,8 @@ OpenCore Changelog
 - Added PickerAudioAssist 'disk image' indication
 - Fixed PickerAudioAssist indications played twice in rare cases
 - Improved OpenCanopy pointer acceleration
+- Added more precise control on `AppleEvent` protocol properties and features
+- Added dynamic keyboard protocol installation on CrScreenshotDxe
 
 #### v0.6.7
 - Fixed ocvalidate return code to be non-zero when issues are found
