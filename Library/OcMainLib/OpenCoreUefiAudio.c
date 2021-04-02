@@ -168,6 +168,15 @@ OcAudioGetFilePath (
         case OcVoiceOverAudioFileWindows:
           BasePath = "Windows";
           break;
+        case OcVoiceOverAudioFileShutDown:
+          BasePath = "ShutDown";
+          break;
+        case OcVoiceOverAudioFileRestart:
+          BasePath = "Restart";
+          break;
+        case OcVoiceOverAudioFileDiskImage:
+          BasePath = "DiskImage";
+          break;
         default:
           BasePath = NULL;
           break;

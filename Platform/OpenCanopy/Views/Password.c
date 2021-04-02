@@ -343,6 +343,9 @@ InternalPasswordBoxFocus (
 {
   if (Focus) {
     mPasswordBoxContainer.Obj.Opacity = 0xFF;
+
+    DrawContext->GuiContext->AudioPlaybackTimeout = 0;
+    DrawContext->GuiContext->VoAction = CanopyVoFocusPassword;
   } else {
     mPasswordBoxContainer.Obj.Opacity = 0x100 / 2;
   }
@@ -553,7 +556,10 @@ InternalPasswordExitLoop (
 
   if (mPasswordBox.RequestConfirm) {
     mPasswordBox.RequestConfirm = FALSE;
-    InternalQueueIncorrectPassword (DrawContext);
+
+    if (!Context->PickerContext->PickerAudioAssist) {
+      InternalQueueIncorrectPassword (DrawContext);
+    }
 
     Confirmed = InternalConfirmPassword (DrawContext, Context);
     SecureZeroMem (&mPasswordBox.PasswordInfo, sizeof (mPasswordBox.PasswordInfo));
