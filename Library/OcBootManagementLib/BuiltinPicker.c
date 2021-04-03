@@ -219,6 +219,8 @@ GetPickerEntryCursor (
 VOID
 UpdateTabContext (
   IN  BOOLEAN                       IsEntering,
+  IN  OC_BOOT_CONTEXT               *BootContext,
+  IN  OC_BOOT_ENTRY                 **BootEntries,
   IN  TAB_CONTEXT                   TabContext,
   IN  INTN                          ChosenEntry,
   IN  CHAR16                        OldEntryCursor,
@@ -242,6 +244,17 @@ UpdateTabContext (
       Code[0] = IsEntering ? OldEntryCursor : L' ';
       gST->ConOut->OutputString (gST->ConOut, Code);
     }
+
+    if (IsEntering) {
+      if (ChosenEntry >= 0) {
+        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileSelected, FALSE);
+        OcPlayAudioEntry (BootContext->PickerContext, BootEntries[ChosenEntry]);
+      } else {
+        //
+        // TODO: Sound for tabbing back to picker if no entry selected (cannot currently happen)
+        // 
+      }
+    }
   } else if (TabContext == TAB_SHUTDOWN || TabContext == TAB_RESTART) {
     if (TabContext == TAB_SHUTDOWN) {
       gST->ConOut->SetCursorPosition (gST->ConOut, ShutdownColumn, ShutdownRestartRow);
@@ -251,15 +264,23 @@ UpdateTabContext (
 
     Code[0] = IsEntering ? L'[' : '|';
     gST->ConOut->OutputString (gST->ConOut, Code);
-
     if (TabContext == TAB_SHUTDOWN) {
       gST->ConOut->OutputString (gST->ConOut, L"Shutdown");
     } else {
       gST->ConOut->OutputString (gST->ConOut, L"Restart");
     }
-
     Code[0] = IsEntering ? L']' : '|';
     gST->ConOut->OutputString (gST->ConOut, Code);
+
+    if (IsEntering) {
+      if (TabContext == TAB_SHUTDOWN) {
+        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileSelected, FALSE);
+        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileShutDown, FALSE);
+      } else {
+        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileSelected, FALSE);
+        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileRestart, FALSE);
+      }
+    }
   }
 #if defined(BUILTIN_DEMONSTRATE_TYPING)
   else if (TabContext == TAB_TYPING_DEMO) {
@@ -451,6 +472,9 @@ OcShowSimpleBootMenu (
         if (BootEntries[Index]->IsExternal) {
           gST->ConOut->OutputString (gST->ConOut, OC_MENU_EXTERNAL);
         }
+        if (BootEntries[Index]->IsFolder) {
+          gST->ConOut->OutputString (gST->ConOut, OC_MENU_DISK_IMAGE);
+        }
         gST->ConOut->OutputString (gST->ConOut, L"\r\n");
       }
 
@@ -536,6 +560,8 @@ OcShowSimpleBootMenu (
       if (PickerKeyInfo.OcKeyCode == OC_INPUT_SWITCH_CONTEXT) {
         UpdateTabContext (
           FALSE,
+          BootContext,
+          BootEntries,
           TabContext,
           ChosenEntry,
           OldEntryCursor,
@@ -571,6 +597,8 @@ OcShowSimpleBootMenu (
 
         UpdateTabContext (
           TRUE,
+          BootContext,
+          BootEntries,
           TabContext,
           ChosenEntry,
           OldEntryCursor,
@@ -591,6 +619,7 @@ OcShowSimpleBootMenu (
         if (PickerKeyInfo.OcKeyCode == OC_INPUT_TYPING_CONFIRM) {
           gST->ConOut->OutputString (gST->ConOut, OC_MENU_RESTART);
           gST->ConOut->OutputString (gST->ConOut, L"\r\n");
+          OcPlayAudioFile (BootContext->PickerContext, AppleVoiceOverAudioFileBeep, FALSE);
           ResetWarm();
           return EFI_SUCCESS;
         }
@@ -598,6 +627,7 @@ OcShowSimpleBootMenu (
         if (PickerKeyInfo.OcKeyCode == OC_INPUT_TYPING_CONFIRM) {
           gST->ConOut->OutputString (gST->ConOut, OC_MENU_SHUTDOWN);
           gST->ConOut->OutputString (gST->ConOut, L"\r\n");
+          OcPlayAudioFile (BootContext->PickerContext, AppleVoiceOverAudioFileBeep, FALSE);
           ResetShutdown();
           return EFI_SUCCESS;
         }
