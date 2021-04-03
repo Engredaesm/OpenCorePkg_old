@@ -2134,6 +2134,9 @@ blocking.
     \item Broadwell-E (\texttt{0x0406F1}) to Broadwell (\texttt{0x0306D4}):\\
     \texttt{Cpuid1Data}: \texttt{D4 06 03 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
+    \item Rocket Lake (\texttt{0x0A0670}) to Comet Lake (\texttt{0x0906EB}):\\
+    \texttt{Cpuid1Data}: \texttt{EB 06 09 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
+    \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
   \end{itemize}
 
   \emph{Note 4}: Be aware that the following configurations are unsupported by XCPM (at least out of the box):
@@ -5186,7 +5189,7 @@ from \href{https://github.com/acidanthera/dmidecode/releases}{Acidanthera/dmidec
   Otherwise, the value from \texttt{OcMacInfoLib} will be set.
   When \texttt{Automatic} is \texttt{false}, a user-specified value will be set if available.
   Otherwise, the original value from the firmware will be set.
-  If no value is provided, the fallback value (\texttt{zero}) will be set.
+  If no value is provided, the failsafe value will be set.
 
   \begin{itemize}
   \tightlist
@@ -6195,11 +6198,12 @@ functioning. Feature highlights:
 \item
   \texttt{KeySubsequentDelay}\\
   \textbf{Type}: \texttt{plist\ integer}\\
-  \textbf{Failsafe}: \texttt{0} (no delay)\\
+  \textbf{Failsafe}: \texttt{1}\\
   \textbf{Description}: Configure subsequent keyboard repeat delay in OpenCore implementation
   of Apple Event protocol, in units of 10ms.
 
   Configures the gap between key repeats. The Apple OEM default value is \texttt{5} (50ms).
+  \texttt{0} is an invalid value for this option.
 
   When using \texttt{KeySupport}, you may find that you get one additional slow key repeat
   before normal speed key repeat starts. If so, set \texttt{KeyInitialDelay} to \texttt{0}
@@ -6207,6 +6211,25 @@ functioning. Feature highlights:
   the unlikely event that you still get frequent, or occasional, double key responses after doing
   this, proceed to set this value to one or two greater than \texttt{KeyForgetThreshold} - use
   the lowest value which works.)
+
+\item
+  \texttt{PointerSpeedDiv}\\
+  \textbf{Type}: \texttt{plist\ integer}\\
+  \textbf{Failsafe}: \texttt{1})\\
+  \textbf{Description}: Configure pointer speed divisor in OpenCore implementation
+  of Apple Event protocol.
+
+  Configures the divisor for pointer movements. The Apple OEM default value is \texttt{1}.
+  \texttt{0} is an invalid value for this option.
+
+\item
+  \texttt{PointerSpeedMul}\\
+  \textbf{Type}: \texttt{plist\ integer}\\
+  \textbf{Failsafe}: \texttt{0})\\
+  \textbf{Description}: Configure pointer speed multiplier in OpenCore implementation
+  of Apple Event protocol.
+
+  Configures the multiplier for pointer movements. The Apple OEM default value is \texttt{1}.
 
 \end{enumerate}
 
