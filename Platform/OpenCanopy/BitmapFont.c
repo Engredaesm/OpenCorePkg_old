@@ -14,6 +14,7 @@
 
 #include "OpenCanopy.h"
 #include "BmfLib.h"
+#include "GuiApp.h"
 
 CONST BMF_CHAR *
 BmfGetChar (
@@ -154,8 +155,7 @@ BmfContextInitialize (
   CONST BMF_BLOCK_HEADER *Block;
   UINTN                  Index;
 
-  INT16                  MinY;
-  UINT16                 MaxY;
+  UINT16                 MaxHeight;
   INT32                  Height;
   INT32                  Width;
   INT32                  Advance;
@@ -323,8 +323,7 @@ BmfContextInitialize (
   }
 
   Chars = Context->Chars;
-  MinY  = MAX_INT16;
-  MaxY  = 0;
+  MaxHeight  = 0;
 
   for (Index = 0; Index < Context->NumChars; ++Index) {
     Result = OcOverflowAddS32 (
@@ -374,8 +373,7 @@ BmfContextInitialize (
       return FALSE;
     }
 
-    MinY = MIN (MinY, Chars[Index].yoffset);
-    MaxY = MAX (MaxY, (UINT16) Height);
+    MaxHeight = MAX (MaxHeight, (UINT16) Height);
     //
     // This only yields unexpected but not undefined behaviour when not met,
     // hence it is fine verifying it only DEBUG mode.
@@ -393,24 +391,7 @@ BmfContextInitialize (
     DEBUG_CODE_END ();
   }
 
-  Result = OcOverflowSubS32 (
-             MaxY,
-             MinY,
-             &Height
-             );
-  if (Result
-   || 0 >= Height || Height > MAX_UINT16) {
-     DEBUG ((
-       DEBUG_WARN,
-       "BMF: Insane font Y info %d %d\n",
-       MaxY,
-       MinY
-       ));
-    return FALSE;
-  }
-
-  Context->Height  = Context->Common->lineHeight;
-  Context->OffsetY = -MinY;
+  Context->Height  = (UINT16) MaxHeight;
 
   Pairs = Context->KerningPairs;
   if (Pairs != NULL) { // According to the docs, kerning pairs are optional
@@ -513,11 +494,6 @@ BmfGetTextInfo (
     return NULL;
   }
 
-  if (PosY < Context->OffsetY) {
-    DEBUG ((DEBUG_WARN, "BMF: Font has invalid minimum y offset.\n"));
-    return NULL;
-  }
-
   ASSERT (String[0] != 0);
 
   Char = BmfGetChar (Context, String[0]);
@@ -538,7 +514,7 @@ BmfGetTextInfo (
   InfoPairs = (CONST BMF_KERNING_PAIR **)&TextInfo->Chars[StringLen];
 
   TextInfo->Chars[0] = Char;
-  Width = PosX + Char->xadvance;
+  Width = (INT32) PosX + Char->xadvance;
 
   for (Index = 1; Index < StringLen; ++Index) {
     ASSERT (String[Index] != 0);
@@ -578,7 +554,8 @@ BmfGetTextInfo (
   }
 
   TextInfo->Width   = (UINT16)Width;
-  TextInfo->Height  = Context->Height;
+  ASSERT (PosY + Context->Height >= PosY);
+  TextInfo->Height  = PosY + Context->Height;
   TextInfo->OffsetY = PosY;
   return TextInfo;
 }
@@ -635,6 +612,7 @@ GuiGetLabel (
   INT32                         TargetCharX;
   INT32                         InitialCharX;
   INT32                         InitialWidthOffset;
+  INT32                         OffsetY;
 
   ASSERT (LabelImage != NULL);
   ASSERT (Context    != NULL);
@@ -644,8 +622,8 @@ GuiGetLabel (
     &Context->BmfContext,
     String,
     StringLen,
-    2 * Context->Scale,
-    2 * Context->Scale
+    BOOT_ENTRY_LABEL_TEXT_OFFSET * Context->Scale,
+    BOOT_ENTRY_LABEL_TEXT_OFFSET * Context->Scale
     );
   if (TextInfo == NULL) {
     DEBUG ((DEBUG_WARN, "BMF: GetTextInfo failed\n"));
@@ -666,12 +644,22 @@ GuiGetLabel (
   InitialWidthOffset = TextInfo->Chars[0]->xoffset;
 
   for (Index = 0; Index < StringLen; ++Index) {
+    OffsetY = TextInfo->Chars[Index]->yoffset + TextInfo->OffsetY;
+    if (OffsetY < 0) {
+      OffsetY = 0;
+      DEBUG ((
+        DEBUG_INFO,
+        "BMF: Char %d y-offset off-screen by %d pixels\n",
+        TextInfo->Chars[Index]->id,
+        -OffsetY
+        ));
+    }
     ASSERT (TextInfo->Chars[Index]->yoffset + TextInfo->OffsetY >= 0);
 
     for (
       RowIndex = 0,
         SourceRowOffset = TextInfo->Chars[Index]->y * Context->FontImage.Width,
-        TargetRowOffset = (TextInfo->Chars[Index]->yoffset + TextInfo->OffsetY) * TextInfo->Width;
+        TargetRowOffset = OffsetY * TextInfo->Width;
       RowIndex < TextInfo->Chars[Index]->height;
       ++RowIndex,
         SourceRowOffset += Context->FontImage.Width,
