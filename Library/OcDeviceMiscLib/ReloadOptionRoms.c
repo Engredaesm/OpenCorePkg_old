@@ -184,7 +184,9 @@ ReloadPciRom (
           }
         }
 
-        FreePool (DecompressedImageBuffer);
+        if (DecompressedImageBuffer != NULL) {
+          FreePool (DecompressedImageBuffer);
+        }
       }
     }
 
@@ -250,9 +252,13 @@ OcReloadOptionRoms (
         }
       }
 
-      FreePool (BindingHandleBuffer);
+      if (BindingHandleBuffer != NULL) {
+        FreePool (BindingHandleBuffer);
+      }
     }
   }
+
+  FreePool (HandleArray);
 
   return ReturnStatus;
 }
