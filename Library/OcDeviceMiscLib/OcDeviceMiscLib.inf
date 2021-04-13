@@ -31,19 +31,43 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
 
+[Guids]
+  gEfiEventExitBootServicesGuid
+  gEfiEventVirtualAddressChangeGuid
+
 [Protocols]
   gEfiPciIoProtocolGuid
+  gEfiDecompressProtocolGuid
+
+  # For handle parsing
+  gEfiLoadedImageProtocolGuid
+  gEfiDriverBindingProtocolGuid
+  gEfiDriverConfiguration2ProtocolGuid
+  gEfiDriverConfigurationProtocolGuid
+  gEfiDriverDiagnostics2ProtocolGuid
+  gEfiDriverDiagnosticsProtocolGuid
+  gEfiComponentName2ProtocolGuid
+  gEfiComponentNameProtocolGuid
+  gEfiDevicePathProtocolGuid
 
 [LibraryClasses]
   BaseLib
+  BaseMemoryLib
   DebugLib
+  DevicePathLib
   IoLib
+  MemoryAllocationLib
   OcGuardLib
+  PrintLib
   UefiLib
   UefiBootServicesTableLib
 
 [Sources]
   ActivateHpetSupport.c
   DirectReset.c
+  ForgeUefi.c
   ReleaseUsbOwnership.c
+  ReloadOptionRoms.c
   ResetAudioTrafficClass.c
+  HandleParsingMin.c
+  HandleParsingMin.h
