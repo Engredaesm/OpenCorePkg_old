@@ -412,25 +412,26 @@ InternalBootPickerKeyEvent (
   BaseY = mBootPickerContainer.Obj.OffsetY + mBootPicker.Hdr.Obj.OffsetY;
 
   if (KeyEvent->OcKeyCode == OC_INPUT_RIGHT) {
-    if (mBootPicker.SelectedIndex + 1 < mBootPicker.Hdr.Obj.NumChildren) {
-      InternalBootPickerChangeEntry (
-        Picker,
-        DrawContext,
-        BaseX,
-        BaseY,
-        mBootPicker.SelectedIndex + 1
-        );
-    }
+    InternalBootPickerChangeEntry (
+      Picker,
+      DrawContext,
+      BaseX,
+      BaseY,
+      mBootPicker.SelectedIndex + 1 < mBootPicker.Hdr.Obj.NumChildren
+        ? mBootPicker.SelectedIndex + 1
+        : 0
+      );
   } else if (KeyEvent->OcKeyCode == OC_INPUT_LEFT) {
-    if (mBootPicker.SelectedIndex > 0) {
-      InternalBootPickerChangeEntry (
-        Picker,
-        DrawContext,
-        BaseX,
-        BaseY,
-        mBootPicker.SelectedIndex - 1
-        );
-    }
+    ASSERT (mBootPicker.Hdr.Obj.NumChildren > 0);
+    InternalBootPickerChangeEntry (
+      Picker,
+      DrawContext,
+      BaseX,
+      BaseY,
+      mBootPicker.SelectedIndex > 0
+        ? mBootPicker.SelectedIndex - 1
+        : mBootPicker.Hdr.Obj.NumChildren - 1
+      );
   } else if (KeyEvent->OcKeyCode == OC_INPUT_CONTINUE) {
     if (mBootPicker.Hdr.Obj.NumChildren > 0) {
       SelectedEntry = InternalGetVolumeEntry (mBootPicker.SelectedIndex);
@@ -898,16 +899,16 @@ InternalBootPickerLeftScrollPtrEvent (
         // The internal design ensures a selected entry cannot be off-screen,
         // scrolling offsets it by at most one spot.
         //
-        if (mBootPicker.SelectedIndex > 0) {
-          InternalBootPickerSelectEntry (
-            &mBootPicker,
-            DrawContext,
-            mBootPicker.SelectedIndex - 1
-            );
+        InternalBootPickerSelectEntry (
+          &mBootPicker,
+          DrawContext,
+          mBootPicker.SelectedIndex > 0
+            ? mBootPicker.SelectedIndex - 1
+            : mBootPicker.Hdr.Obj.NumChildren - 1
+          );
 
           SelectedEntry = InternalGetVolumeEntry (mBootPicker.SelectedIndex);
           ASSERT (!(mBootPicker.Hdr.Obj.OffsetX + SelectedEntry->Hdr.Obj.OffsetX + SelectedEntry->Hdr.Obj.Width > mBootPickerContainer.Obj.Width));
-        }
       }
       //
       // Falthrough to 'hit' case.
@@ -988,13 +989,13 @@ InternalBootPickerRightScrollPtrEvent (
         // The internal design ensures a selected entry cannot be off-screen,
         // scrolling offsets it by at most one spot.
         //
-        if (mBootPicker.SelectedIndex + 1 < mBootPicker.Hdr.Obj.NumChildren) {
-          InternalBootPickerSelectEntry (
-            &mBootPicker,
-            DrawContext,
-            mBootPicker.SelectedIndex + 1
-            );
-        }
+        InternalBootPickerSelectEntry (
+          &mBootPicker,
+          DrawContext,
+          mBootPicker.SelectedIndex + 1 < mBootPicker.Hdr.Obj.NumChildren
+            ? mBootPicker.SelectedIndex + 1
+            : 0
+          );
 
         SelectedEntry = InternalGetVolumeEntry (mBootPicker.SelectedIndex);
         ASSERT (!(mBootPicker.Hdr.Obj.OffsetX + SelectedEntry->Hdr.Obj.OffsetX < 0));
