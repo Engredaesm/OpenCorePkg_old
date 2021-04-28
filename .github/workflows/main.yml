@@ -23,6 +23,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Add Linux Toolchain
+        run: brew tap FiloSottile/homebrew-musl-cross
+
+      - name: Install Linux Toolchain
+        run: brew install musl-cross
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
       - name: Install Dependencies
         run: brew install openssl mingw-w64
         env:
