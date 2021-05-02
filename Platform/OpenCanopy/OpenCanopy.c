@@ -639,26 +639,26 @@ GuiOverlayPointer (
   //
 
   BaseX = (INT64) PointerPos.Pos.X - BOOT_CURSOR_OFFSET * DrawContext->Scale;
+  MaxWidth = DrawContext->Screen.Width;
   if (BaseX < 0) {
     ImageOffsetX = (UINT32) -BaseX;
     DrawBaseX    = 0;
   } else {
     ImageOffsetX = 0;
     DrawBaseX    = (UINT32) BaseX;
+    MaxWidth    -= DrawBaseX;
   }
 
-  MaxWidth = MIN (CursorImage->Width, (UINT32) (DrawContext->Screen.Width - BaseX));
-
   BaseY = (INT64) PointerPos.Pos.Y - BOOT_CURSOR_OFFSET * DrawContext->Scale;
+  MaxHeight = DrawContext->Screen.Height;
   if (BaseY < 0) {
     ImageOffsetY = (UINT32) -BaseY;
     DrawBaseY    = 0;
   } else {
     ImageOffsetY = 0;
     DrawBaseY    = (UINT32) BaseY;
+    MaxHeight   -= DrawBaseY;
   }
-
-  MaxHeight = MIN (CursorImage->Height, (UINT32) (DrawContext->Screen.Height - BaseY));
 
   GuiDrawToBuffer (
     CursorImage,
@@ -811,7 +811,7 @@ GuiLibConstruct (
   INT64                                      CursorX;
   INT64                                      CursorY;
 
-  mOutputContext = GuiOutputConstruct ();
+  mOutputContext = GuiOutputConstruct (GuiContext->Scale);
   if (mOutputContext == NULL) {
     DEBUG ((DEBUG_WARN, "OCUI: Failed to initialise output\n"));
     return EFI_UNSUPPORTED;
