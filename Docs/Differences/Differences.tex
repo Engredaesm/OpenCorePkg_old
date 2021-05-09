@@ -1,7 +1,7 @@
 \documentclass[]{article}
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL PreviousConfiguration.tex   Mon May  3 21:40:43 2021
-%DIF ADD ../Configuration.tex        Mon May  3 21:43:03 2021
+%DIF DEL PreviousConfiguration.tex   Fri May  7 10:26:40 2021
+%DIF ADD ../Configuration.tex        Sun May  9 02:38:36 2021
 
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
@@ -3663,7 +3663,8 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   \item \texttt{OCA} ---- OcAcpiLib
   \item \texttt{OCBP} --- OcAppleBootPolicyLib
   \item \texttt{OCB} --- OcBootManagementLib
-  \item \texttt{OCCL} --- OcAppleChunkListLib
+  \item \DIFaddbegin \texttt{\DIFadd{OCLBT}} \DIFadd{--- OcBlitLib
+  }\item \DIFaddend \texttt{OCCL} --- OcAppleChunkListLib
   \item \texttt{OCCPU} --- OcCpuLib
   \item \texttt{OCC} --- OcConsoleLib
   \item \texttt{OCDC} --- OcDriverConnectionLib
@@ -4491,7 +4492,12 @@ improvements:
   One-byte data defining \texttt{boot.efi} user interface scaling. Should be \textbf{01} for normal
   screens and \textbf{02} for HiDPI screens.
  \item
-  \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:DefaultBackgroundColor}
+  \DIFaddbegin \texttt{\DIFadd{7C436110-AB2A-4BBB-A880-FE41995C9F82:ForceDisplayRotationInEFI}}
+  \break
+  \DIFadd{32-bit integer defining display rotation. Can be }\textbf{\DIFadd{0}} \DIFadd{for no rotation
+  or any of }\texttt{\DIFadd{90}}\DIFadd{, }\texttt{\DIFadd{180}}\DIFadd{, }\texttt{\DIFadd{270}} \DIFadd{for matching rotation in degrees.
+ }\item
+  \DIFaddend \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:DefaultBackgroundColor}
   \break
   Four-byte \texttt{BGRA} data defining \texttt{boot.efi} user interface background colour.
   Standard colours include \textbf{BF BF BF 00} (Light Gray) and \textbf{00 00 00 00}
@@ -6835,7 +6841,13 @@ functioning. Feature highlights:
   performance or fix rendering issues. However, this option is not recommended unless
   there is an obvious benefit as it may result in issues such as slower scrolling.
 
-\item
+  \DIFaddbegin \DIFadd{This renderer fully supports }\texttt{\DIFadd{AppleEg2Info}} \DIFadd{protocol and will provide
+  screen rotation for all EFI applications. In order to provide seamless rotation
+  compatibility with }\texttt{\DIFadd{EfiBoot}}\DIFadd{, builtin }\texttt{\DIFadd{AppleFramebufferInfo}} \DIFadd{should
+  also be used, i.e. it may need to be overridden on Mac EFI.
+}
+
+\DIFaddend \item
   \texttt{GopPassThrough}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
@@ -6962,7 +6974,20 @@ functioning. Feature highlights:
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Replaces the Apple Debug Log protocol with a builtin
+  version\DIFaddbegin \DIFadd{.
+}
+
+\item
+  \texttt{\DIFadd{AppleEg2Info}}\\
+  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ boolean}}\\
+  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{false}}\\
+  \textbf{\DIFadd{Description}}\DIFadd{: Replaces the Apple EFI Graphics 2 protocol with a builtin
   version.
+}
+
+  \emph{\DIFadd{Note}}\DIFadd{: This protocol allows newer }\texttt{\DIFadd{EfiBoot}} \DIFadd{versions (at least 10.15)
+  to expose screen rotation to macOS. Refer to }\texttt{\DIFadd{ForceDisplayRotationInEFI}}
+  \DIFadd{variable description on how to set screen rotation angle}\DIFaddend .
 
 \item
   \texttt{AppleFramebufferInfo}\\
