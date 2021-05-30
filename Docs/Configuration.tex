@@ -3233,8 +3233,9 @@ the default boot entry choice will remain changed until the next manual reconfig
   builds only.
   \item \texttt{0x0040} --- \texttt{OC\_ATTR\_USE\_MINIMAL\_UI}, use minimal UI display, no
   Shutdown or Restart buttons, affects OpenCanopy and builtin picker.
-  \item \texttt{0x0080} --- \texttt{OC\_ATTR\_USE\_FLAVOUR\_ICON}, provides flexible boot entry
-  content description, suitable for picking the best media across different content sets:
+  \item \texttt{0x0080} --- \texttt{OC\_ATTR\_USE\_FLAVOUR\_ICON}\label{oc-attr-use-flavour-icon},
+  provides flexible boot entry content description, suitable for picking the best media across
+  different content sets:
 
   When enabled, the entry icon in OpenCanopy and the audio assist entry sound in OpenCanopy
   and builtin boot picker are chosen by something called content flavour. To determine
@@ -3748,19 +3749,30 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   entry for disabling and enabling System Integrity Protection in OpenCore picker.
 
   This will toggle Apple NVRAM variable \texttt{csr-active-config} between \texttt{0} for
-  SIP Enabled and the current macOS default for SIP Disabled (currently \texttt{0x6F}
-  for Big Sur).
+  SIP Enabled and a practical default value for SIP Disabled (currently \texttt{0x26F}).
 
-  \emph{Note1}: Using the SIP Disabled value from a newer version of macOS on an older version
-  (e.g. Catalina and below) will report an unknown setting if queried using \texttt{csrutil\ status},
-  but will still run correctly and be secure, because new bits are added but old bits
-  are not removed between versions of macOS. (It is possible to configure \texttt{CsrUtil.efi}
-  as a \texttt{TextMode} \texttt{Tools} entry to configure a different value, e.g. use \texttt{toggle\ 0x67}
-  in \texttt{Arguments} to toggle the default SIP Disabled value for macOS Catalina.)
-
-  \emph{Note2}: It is strongly recommended not to make a habit of running macOS with
+  \emph{Note1}: It is strongly recommended not to make a habit of running macOS with
   SIP disabled. Use of this boot option may make it easier to quickly disable SIP
   protection when genuinely needed - it should be re-enabled again afterwards.
+
+  \emph{Note2}: OC uses \texttt{0x26F} even though \texttt{csrutil disable} on Big Sur
+  sets \texttt{0x7F}. To explain the choice:
+  \begin{itemize}
+  \tightlist
+  \item \texttt{csrutil disable -{}-no-internal} actually sets \texttt{0x6F}, and this is
+  preferable because \texttt{CSR\_ALLOW\_APPLE\_INTERNAL} (\texttt{0x10}) prevents updates
+  (unless you are running an internal build of macOS).
+  \item \texttt{CSR\_ALLOW\_UNAPPROVED\_KEXTS} (\texttt{0x200}) is generally useful, in the case
+  where you do need to have SIP disabled, as it allows installing unsigned kexts without manual
+  approval in System Preferences.
+  \item \texttt{CSR\_ALLOW\_UNAUTHENTICATED\_ROOT} (\texttt{0x800}) is not practical as it prevents
+  incremental (non-full) OTA updates.
+  \end{itemize}
+ 
+  \emph{Note3}: For any other value which you may need to use, it is possible to
+  configure \texttt{CsrUtil.efi} as a \texttt{TextMode} \texttt{Tools} entry to configure a
+  different value, e.g. use \texttt{toggle\ 0x6F} in \texttt{Arguments} to toggle the
+  SIP disabled value set by default by \texttt{csrutil disable -{}-no-internal} in Big Sur.
 
 \item
   \texttt{ApECID}\\
@@ -4223,6 +4235,13 @@ rm vault.pub
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Set to \texttt{true} activate this entry.
+
+\item
+  \texttt{Flavour}\\
+  \textbf{Type}: \texttt{plist\ string}\\
+  \textbf{Failsafe}: \texttt{Auto}\\
+  \textbf{Description}: Specify the content flavour for this entry.
+  See \hyperref[oc-attr-use-flavour-icon]{\texttt{OC\_ATTR\_USE\_FLAVOUR\_ICON}} flag for documentation.
 
 \item
   \texttt{Name}\\
@@ -4693,6 +4712,11 @@ troubleshooting:
 \item \texttt{7C436110-AB2A-4BBB-A880-FE41995C9F82:bootercfg-once}
   \break
   Booter arguments override removed after first launch. Otherwise equivalent to \texttt{bootercfg}.
+\item \texttt{7C436110-AB2A-4BBB-A880-FE41995C9F82:csr-data}
+  \break
+  Specify sources of kexts which will be approved regardless of SIP \texttt{CSR\_ALLOW\_UNAPPROVED\_KEXTS} value.\\
+  Example contents:\\
+  \texttt{<dict><key>kext-allowed-teams</key><array><string>\{DEVELOPER-TEAM-ID\}</string></array></dict>\%00}
 \item
   \texttt{7C436110-AB2A-4BBB-A880-FE41995C9F82:efiboot-perf-record}
   \break
