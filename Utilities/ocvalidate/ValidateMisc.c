@@ -249,6 +249,13 @@ CheckMiscBoot (
     DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant cannot be empty!\n"));
     ++ErrorCount;
   }
+  //
+  // Check the length of path relative to OC directory.
+  //
+  if (StrLen (OPEN_CORE_IMAGE_PATH) + AsciiStrSize (PickerVariant) > OC_STORAGE_SAFE_PATH_MAX) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant is too long (should not exceed %u)!\n", OC_STORAGE_SAFE_PATH_MAX));
+    ++ErrorCount;
+  }
 
   IsPickerAudioAssistEnabled = UserMisc->Boot.PickerAudioAssist;
   IsAudioSupportEnabled      = UserUefi->Audio.AudioSupport;
@@ -578,7 +585,15 @@ CheckMiscTools (
       DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
-    
+
+    //
+    // Check the length of path relative to OC directory.
+    //
+    if (StrLen (OPEN_CORE_TOOL_PATH) + AsciiStrSize (Path) > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Path is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
+
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
       if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {

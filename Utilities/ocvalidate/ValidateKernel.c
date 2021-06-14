@@ -197,6 +197,28 @@ CheckKernelAdd (
     }
 
     //
+    // Check the length of path relative to OC directory.
+    //
+    if (StrLen (OPEN_CORE_KEXT_PATH) + AsciiStrSize (BundlePath) > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
+    //
+    // There is one missing '\\' after the concatenation of BundlePath and ExecutablePath. Append one.
+    //
+    if (StrLen (OPEN_CORE_KEXT_PATH) + AsciiStrLen (BundlePath) + 1 + AsciiStrSize (ExecutablePath) > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->ExecutablePath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
+    //
+    // There is one missing '\\' after the concatenation of BundlePath and PlistPath. Append one.
+    //
+    if (StrLen (OPEN_CORE_KEXT_PATH) + AsciiStrLen (BundlePath) + 1 + AsciiStrSize (PlistPath) > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
+
+    //
     // MinKernel must not be below macOS 10.4 (Darwin version 8).
     //
     if (!OcMatchDarwinVersion (OcParseDarwinVersion (MinKernel), KERNEL_VERSION_TIGER_MIN, 0)) {
@@ -403,7 +425,8 @@ CheckKernelEmulate (
   Result = DataHasProperMasking (
     UserKernel->Emulate.Cpuid1Data,
     UserKernel->Emulate.Cpuid1Mask,
-    sizeof (UserKernel->Emulate.Cpuid1Data)
+    sizeof (UserKernel->Emulate.Cpuid1Data),
+    sizeof (UserKernel->Emulate.Cpuid1Mask)
     );
 
   if (!Result) {
