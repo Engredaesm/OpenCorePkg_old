@@ -23,6 +23,7 @@ In the case of macOS only, a flavour based on the detected OS version is applied
 
 For icon pack authors, the **Apple** icon is recommended, **AppleRecovery** and **AppleTM** are suggested, all others are entirely optional.
 
+ - **Apple12:Apple** - Monterey (`Apple12.icns`)
  - **Apple11:Apple** - Big Sur (`Apple11.icns`)
  - **Apple10_15:Apple** - Catalina (`Apple10_15.icns`, etc.)
  - **Apple10_14:Apple** - Mojave
