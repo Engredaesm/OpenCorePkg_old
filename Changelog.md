@@ -13,6 +13,8 @@ OpenCore Changelog
 - Added VSCode source level IDE debug config example to debug docs
 - Added other minor debug docs updates
 - Fixed incorrect timeout of built-in picker on IA32
+- Added support for custom kernels on ESP partition
+- Fixed DEBUG ASSERT on pressing change entry keys with single boot entry in OpenCanopy
 
 #### v0.7.0
 - Fixed NVRAM reset on firmware with write-protected `BootOptionSupport`
