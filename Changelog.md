@@ -2,6 +2,9 @@ OpenCore Changelog
 ==================
 #### v0.7.2
 - Fixed OSBundleLibraries/OSBundleLibaries64 handling
+- Added `GraphicsInputMirroring` to fix lost keystrokes in some non-Apple graphical UEFI apps
+- Added support for stack canaries (security cookies / stack guards)
+- Fixed unintialised memory access in AudioDxe causing audio playback failure
 
 #### v0.7.1
 - Added `SyncTableIds` quirk to sync modified table OEM identifiers
